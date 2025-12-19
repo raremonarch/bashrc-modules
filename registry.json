@@ -1,0 +1,145 @@
+{
+  "version": "1.0",
+  "modules": [
+    {
+      "id": "git",
+      "name": "Git Helpers",
+      "description": "Git aliases and clone helpers for multiple remotes with SSH key management",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/daevski/bashrc-modules/main/git.sh",
+      "category": "version-control",
+      "dependencies": ["ssh-agent"],
+      "exports": {
+        "aliases": ["gitaddcommit"],
+        "functions": ["ssh_load_key_for_url", "clone-eis", "clone-daevski", "git-del-branch"],
+        "variables": []
+      }
+    },
+    {
+      "id": "docker",
+      "name": "Docker Utils",
+      "description": "Docker cleanup and management functions",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/daevski/bashrc-modules/main/docker.sh",
+      "category": "containers",
+      "dependencies": [],
+      "exports": {
+        "aliases": [],
+        "functions": ["docker-nukec", "docker-purge-all"],
+        "variables": []
+      }
+    },
+    {
+      "id": "python",
+      "name": "Python Development",
+      "description": "Python development helpers for poetry, pytest, and coverage",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/daevski/bashrc-modules/main/python.sh",
+      "category": "development",
+      "dependencies": [],
+      "exports": {
+        "aliases": [],
+        "functions": ["cdpydev", "poetryreq", "pycov", "pycov-all", "coverage-check"],
+        "variables": []
+      }
+    },
+    {
+      "id": "ssh-agent",
+      "name": "SSH Agent Manager",
+      "description": "Persistent SSH agent management with key loading",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/daevski/bashrc-modules/main/ssh-agent.sh",
+      "category": "security",
+      "dependencies": [],
+      "exports": {
+        "aliases": [],
+        "functions": ["is_key_loaded", "ssh-add-all"],
+        "variables": ["SSH_AUTH_SOCK", "SSH_AGENT_PID"]
+      }
+    },
+    {
+      "id": "aws",
+      "name": "AWS Helpers",
+      "description": "AWS CLI shortcuts and utilities",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/daevski/bashrc-modules/main/aws.sh",
+      "category": "cloud",
+      "dependencies": [],
+      "exports": {
+        "aliases": [],
+        "functions": [],
+        "variables": []
+      }
+    },
+    {
+      "id": "audio-switching",
+      "name": "Audio Switching",
+      "description": "Audio device switching utilities",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/daevski/bashrc-modules/main/audio-switching.sh",
+      "category": "system",
+      "dependencies": [],
+      "exports": {
+        "aliases": [],
+        "functions": [],
+        "variables": []
+      }
+    },
+    {
+      "id": "gh-cli-tool",
+      "name": "GitHub CLI Tools",
+      "description": "GitHub CLI helper functions",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/daevski/bashrc-modules/main/gh-cli-tool.sh",
+      "category": "version-control",
+      "dependencies": [],
+      "exports": {
+        "aliases": [],
+        "functions": [],
+        "variables": []
+      }
+    },
+    {
+      "id": "openssl_file_encryption",
+      "name": "OpenSSL File Encryption",
+      "description": "File encryption and decryption using OpenSSL",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/daevski/bashrc-modules/main/openssl_file_encryption.sh",
+      "category": "security",
+      "dependencies": [],
+      "exports": {
+        "aliases": [],
+        "functions": [],
+        "variables": []
+      }
+    },
+    {
+      "id": "pyenv",
+      "name": "Pyenv Setup",
+      "description": "Pyenv initialization and configuration",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/daevski/bashrc-modules/main/pyenv.sh",
+      "category": "development",
+      "dependencies": [],
+      "exports": {
+        "aliases": [],
+        "functions": [],
+        "variables": []
+      }
+    },
+    {
+      "id": "system",
+      "name": "System Utilities",
+      "description": "General system utility functions and aliases",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/daevski/bashrc-modules/main/system.sh",
+      "category": "system",
+      "dependencies": [],
+      "exports": {
+        "aliases": [],
+        "functions": [],
+        "variables": []
+      }
+    }
+  ]
+}
