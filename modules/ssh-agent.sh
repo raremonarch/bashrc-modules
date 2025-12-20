@@ -2,7 +2,7 @@
 # Module: ssh-agent
 # Version: 0.2.0
 # Description: SSH agent management with automatic key loading for ssh and git
-# Dependencies: none
+# BashMod Dependencies: none
 
 # SSH Agent Management
 # Ensures SSH agent is running and available for the session

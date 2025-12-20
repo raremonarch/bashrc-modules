@@ -1,4 +1,8 @@
 #!/bin/bash
+# Module: docker
+# Version: 0.1.0
+# Description: Docker cleanup and management functions
+# BashMod Dependencies: none
 # ~/.bashrc.d/docker.sh
 
 function docker-nukec {

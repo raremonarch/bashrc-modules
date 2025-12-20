@@ -1,4 +1,8 @@
 #!/bin/bash
+# Module: python
+# Version: 0.1.0
+# Description: Python development helpers for poetry, pytest, and coverage
+# BashMod Dependencies: none
 # ~/.bashrc.d/python.sh
 
 function cdpydev () {

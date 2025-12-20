@@ -1,4 +1,8 @@
 #!/bin/bash
+# Module: pyenv
+# Version: 0.1.0
+# Description: Pyenv initialization and configuration
+# BashMod Dependencies: none
 # pyenv configuration - managed by kitbash
 
 export PYENV_ROOT="$HOME/.pyenv"

@@ -2,7 +2,7 @@
 # Module: git
 # Version: 0.2.0
 # Description: Git aliases and clone helpers for multiple remotes with SSH key management
-# Dependencies: ssh-agent
+# BashMod Dependencies: ssh-agent@0.2.0
 
 alias gitaddcommit='git add -A . && git commit -m '
 

@@ -1,3 +1,8 @@
+#!/bin/bash
+# Module: gh-cli-tool
+# Version: 0.1.0
+# Description: GitHub CLI helper functions
+# BashMod Dependencies: none
 function gh-run-info() {
   local ids=("$@")
   if [ ${#ids[@]} -eq 0 ]; then

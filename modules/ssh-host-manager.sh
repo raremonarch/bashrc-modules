@@ -2,7 +2,7 @@
 # Module: ssh-host-manager
 # Version: 0.1.0
 # Description: Centralized SSH host and key management with dynamic clone function generation
-# Dependencies: ssh-agent
+# BashMod Dependencies: ssh-agent@0.2.0
 
 # SSH config file location
 SSH_CONFIG="${SSH_CONFIG:-$HOME/.ssh/config}"

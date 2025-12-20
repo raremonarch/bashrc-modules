@@ -1,3 +1,8 @@
+#!/bin/bash
+# Module: system
+# Version: 0.1.0
+# Description: General system utility functions and aliases
+# BashMod Dependencies: none
 alias lsp="ls -lahp"
 alias calc='galculator'
 alias pwdsize='du -sh .'

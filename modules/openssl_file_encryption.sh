@@ -1,3 +1,8 @@
+#!/bin/bash
+# Module: openssl_file_encryption
+# Version: 0.1.0
+# Description: File encryption and decryption using OpenSSL
+# BashMod Dependencies: none
 # custom, user defined bash functions
 
 ###
