@@ -1,6 +1,6 @@
 #!/bin/bash
 # Module: ssh-host-manager
-# Version: 0.2.0
+# Version: 0.3.0
 # Description: Centralized SSH host and key management with dynamic clone function generation
 # BashMod Dependencies: ssh-agent@0.2.0
 
@@ -14,132 +14,217 @@ chmod 600 "$SSH_CONFIG"
 
 # Function to add a new SSH host
 ssh-host-add() {
+    # Show help if requested
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: ssh-host-add <hostname>"
+        echo ""
+        echo "Interactively add an SSH host configuration with key management."
+        echo "You'll be prompted for all required details."
+        echo ""
+        echo "Example: ssh-host-add macmini.lan"
+        return 0
+    fi
+
+    # Require hostname as first argument
+    local hostname="$1"
+    if [ -z "$hostname" ]; then
+        echo "Usage: ssh-host-add <hostname>"
+        echo "Example: ssh-host-add macmini.lan"
+        return 1
+    fi
+
+    # Show example SSH config format
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "Example SSH Config Format:"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "  Host myserver"
+    echo "      HostName server.example.com"
+    echo "      User myusername"
+    echo "      Port 22"
+    echo "      IdentityFile ~/.ssh/id_ed25519"
+    echo "      IdentitiesOnly yes"
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    # Initialize variables
     local host_alias=""
-    local hostname=""
     local user=""
     local org=""
     local clone_dir=""
     local key_path=""
     local generate_key=false
     local key_type="ed25519"
-    local host_type="ssh"  # "ssh" or "git"
+    local host_type="ssh"
     local port="22"
     local copy_key=false
 
-    # Parse arguments
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --host-alias)
-                host_alias="$2"
-                shift 2
-                ;;
-            --hostname)
-                hostname="$2"
-                shift 2
-                ;;
-            --user)
-                user="$2"
-                shift 2
-                ;;
-            --port)
-                port="$2"
-                shift 2
-                ;;
-            --org)
-                org="$2"
-                shift 2
-                ;;
-            --clone-dir)
-                clone_dir="$2"
-                shift 2
-                ;;
-            --key-path)
-                key_path="$2"
-                shift 2
-                ;;
-            --generate-key)
-                generate_key=true
-                shift
-                ;;
-            --key-type)
-                key_type="$2"
-                shift 2
-                ;;
-            --type)
-                host_type="$2"
-                shift 2
-                ;;
-            --copy-key)
-                copy_key=true
-                shift
-                ;;
-            -h|--help)
-                echo "Usage: ssh-host-add [OPTIONS]"
-                echo ""
-                echo "Add an SSH host configuration with key management."
-                echo ""
-                echo "Options:"
-                echo "  --host-alias ALIAS    SSH host alias (required)"
-                echo "  --hostname HOST       Actual hostname/IP (required)"
-                echo "  --user USER           SSH user (required for SSH hosts, default: git for Git hosts)"
-                echo "  --port PORT           SSH port (default: 22)"
-                echo "  --type TYPE           Host type: 'ssh' or 'git' (default: ssh)"
-                echo "  --key-path PATH       Path to existing SSH key (optional)"
-                echo "  --generate-key        Generate a new SSH key"
-                echo "  --key-type TYPE       Key type for generation (default: ed25519)"
-                echo "  --copy-key            Copy public key to remote host (SSH hosts only)"
-                echo ""
-                echo "Git-specific options:"
-                echo "  --org ORG             Organization/user on Git host (required for Git hosts)"
-                echo "  --clone-dir DIR       Base directory for clones (required for Git hosts)"
-                echo ""
-                echo "Examples:"
-                echo "  # Add a regular SSH host with existing key"
-                echo "  ssh-host-add --host-alias macmini --hostname macmini.lan \\"
-                echo "               --user david --key-path ~/.ssh/id_ed25519 --copy-key"
-                echo ""
-                echo "  # Add a Git host (GitHub, GitLab, etc.) with new key"
-                echo "  ssh-host-add --host-alias work --hostname github.com --type git \\"
-                echo "               --org MyCompany --clone-dir ~/dev/work --generate-key"
-                return 0
-                ;;
-            *)
-                echo "Unknown option: $1"
-                echo "Use --help for usage information"
-                return 1
-                ;;
-        esac
-    done
+    # Detect if this might be a Git host
+    local is_git_host=false
+    case "$hostname" in
+        github.com|gitlab.com|bitbucket.org|*.github.com|*.gitlab.com)
+            is_git_host=true
+            ;;
+    esac
 
-    # Auto-detect host type if hostname is a known Git host
-    if [ -z "$org" ] && [ -z "$clone_dir" ]; then
-        case "$hostname" in
-            github.com|gitlab.com|bitbucket.org|*.github.com|*.gitlab.com)
-                echo "Note: Detected Git host '$hostname', but no --org or --clone-dir specified."
-                echo "      Setting type to 'ssh'. Use --type git --org ORG --clone-dir DIR for Git functionality."
-                ;;
-        esac
+    # Prompt for host alias
+    read -p "Host alias (short name for 'ssh <alias>'): " host_alias
+    if [ -z "$host_alias" ]; then
+        echo "Error: Host alias is required"
+        return 1
     fi
 
-    # Validate based on host type
-    if [ "$host_type" = "git" ]; then
-        # Git host validation
-        if [ -z "$host_alias" ] || [ -z "$hostname" ] || [ -z "$org" ] || [ -z "$clone_dir" ]; then
-            echo "Error: Missing required arguments for Git host"
-            echo "Required: --host-alias, --hostname, --org, --clone-dir"
-            echo "Use --help for usage information"
+    # Check if host already exists
+    if grep -q "^Host $host_alias$" "$SSH_CONFIG" 2>/dev/null; then
+        echo "Warning: Host alias '$host_alias' already exists in SSH config"
+        read -p "Overwrite? [y/N] " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             return 1
         fi
-        # Set default user for Git hosts
-        user="${user:-git}"
+    fi
+
+    # Ask about host type
+    if [ "$is_git_host" = true ]; then
+        echo ""
+        echo "Detected Git host: $hostname"
+        read -p "Is this for Git repositories? [Y/n] " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            host_type="git"
+        fi
     else
-        # SSH host validation
-        if [ -z "$host_alias" ] || [ -z "$hostname" ] || [ -z "$user" ]; then
-            echo "Error: Missing required arguments for SSH host"
-            echo "Required: --host-alias, --hostname, --user"
-            echo "Use --help for usage information"
+        echo ""
+        read -p "Is this for Git repositories? [y/N] " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            host_type="git"
+        fi
+    fi
+
+    # Prompt based on host type
+    if [ "$host_type" = "git" ]; then
+        # Git host prompts
+        user="git"
+        echo ""
+        read -p "Git organization/username: " org
+        if [ -z "$org" ]; then
+            echo "Error: Organization is required for Git hosts"
             return 1
         fi
+
+        read -p "Clone directory (e.g., ~/code/work): " clone_dir
+        if [ -z "$clone_dir" ]; then
+            echo "Error: Clone directory is required for Git hosts"
+            return 1
+        fi
+    else
+        # SSH host prompts
+        echo ""
+        read -p "SSH username: " user
+        if [ -z "$user" ]; then
+            echo "Error: Username is required"
+            return 1
+        fi
+
+        read -p "SSH port [22]: " port
+        port="${port:-22}"
+    fi
+
+    # Ask about SSH key
+    echo ""
+    echo "SSH Key Setup:"
+    read -p "Use existing SSH key? [Y/n] " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        # Use existing key - show available keys
+        echo ""
+        echo "Available SSH keys in ~/.ssh/:"
+
+        # Find all private keys (files with corresponding .pub files)
+        local keys=()
+        local i=1
+        while IFS= read -r pubkey; do
+            local privkey="${pubkey%.pub}"
+            if [ -f "$privkey" ]; then
+                keys+=("$privkey")
+                local keyname=$(basename "$privkey")
+                local keytype=$(ssh-keygen -l -f "$pubkey" 2>/dev/null | awk '{print $NF}' | tr -d '()')
+                echo "  [$i] $keyname ${keytype:+($keytype)}"
+                ((i++))
+            fi
+        done < <(find ~/.ssh -maxdepth 1 -name "*.pub" -type f 2>/dev/null | sort)
+
+        if [ ${#keys[@]} -eq 0 ]; then
+            echo "  (no existing key pairs found)"
+            echo ""
+            read -p "Path to SSH key: " key_path
+        else
+            echo ""
+            read -p "Select key [1-${#keys[@]}] or enter custom path: " key_choice
+
+            if [[ "$key_choice" =~ ^[0-9]+$ ]] && [ "$key_choice" -ge 1 ] && [ "$key_choice" -le ${#keys[@]} ]; then
+                # User selected a number
+                key_path="${keys[$((key_choice-1))]}"
+            else
+                # User entered a custom path
+                key_path="$key_choice"
+            fi
+        fi
+
+        # Use default if empty
+        key_path="${key_path:-~/.ssh/id_ed25519}"
+    else
+        # Generate new key
+        generate_key=true
+        read -p "Key type [ed25519]: " key_type
+        key_type="${key_type:-ed25519}"
+    fi
+
+    # Ask about copying key (SSH hosts only)
+    if [ "$host_type" = "ssh" ] && [ "$generate_key" = false ]; then
+        echo ""
+        read -p "Copy public key to remote host? [y/N] " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            copy_key=true
+        fi
+    fi
+
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "Configuration Summary:"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  Host alias:  $host_alias"
+    echo "  Hostname:    $hostname"
+    echo "  Type:        $host_type"
+    echo "  User:        $user"
+    if [ "$host_type" = "ssh" ]; then
+        echo "  Port:        $port"
+    else
+        echo "  Git org:     $org"
+        echo "  Clone dir:   $clone_dir"
+    fi
+    if [ "$generate_key" = true ]; then
+        echo "  Key:         (new $key_type key will be generated)"
+    else
+        echo "  Key:         $key_path"
+    fi
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    read -p "Proceed with this configuration? [Y/n] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        echo "Cancelled."
+        return 1
+    fi
+    echo ""
+
+    # Handle overwrite if needed
+    if grep -q "^Host $host_alias$" "$SSH_CONFIG" 2>/dev/null; then
+        _ssh_host_remove_from_config "$host_alias"
     fi
 
     # Expand tilde in paths
@@ -148,7 +233,7 @@ ssh-host-add() {
     fi
 
     # Handle key generation or selection
-    if [ -z "$key_path" ] || [ "$generate_key" = true ]; then
+    if [ "$generate_key" = true ]; then
         # Generate new key
         key_path="$HOME/.ssh/${host_alias}_${key_type}"
 
@@ -178,6 +263,8 @@ ssh-host-add() {
                 echo "Add this public key to your ${hostname} account"
             else
                 echo "Public key generated for ${hostname}"
+                echo ""
+                echo "Note: Once the SSH config is saved, connect with: ssh ${host_alias}"
             fi
         fi
     else
@@ -222,18 +309,6 @@ ssh-host-add() {
                 echo "✓ Public key copied successfully"
             fi
         fi
-    fi
-
-    # Check if host already exists
-    if grep -q "^Host $host_alias$" "$SSH_CONFIG" 2>/dev/null; then
-        echo "Warning: Host alias '$host_alias' already exists in SSH config"
-        read -p "Overwrite? [y/N] " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            return 1
-        fi
-        # Remove old entry
-        _ssh_host_remove_from_config "$host_alias"
     fi
 
     # Convert absolute paths back to tilde notation for config
