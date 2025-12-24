@@ -12,6 +12,7 @@ This directory contains the component modules for the ssh-host-manager suite.
 ## Loading Order
 
 Components are loaded in this specific order by the main module:
+
 1. ssh-agent.sh (must be first - provides core SSH functionality)
 2. git-ssh.sh (depends on ssh-agent.sh)
 3. git-clone.sh (depends on git-ssh.sh)
