@@ -64,7 +64,25 @@
         "variables": [
           "SSH_CONFIG"
         ]
-      }
+      },
+      "files": [
+        {
+          "path": "ssh-host-manager/agent.sh",
+          "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager/agent.sh"
+        },
+        {
+          "path": "ssh-host-manager/git.sh",
+          "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager/git.sh"
+        },
+        {
+          "path": "ssh-host-manager/manager.sh",
+          "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager/manager.sh"
+        },
+        {
+          "path": "ssh-host-manager/README.md",
+          "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager/README.md"
+        }
+      ]
     },
     {
       "id": "aws-wrapper",
