@@ -1,0 +1,168 @@
+#!/bin/bash
+# Pre-commit hook to validate module version updates and registry synchronization
+
+echo "Running pre-commit validation..."
+
+# Check if registry.json exists
+if [ ! -f "registry.json" ]; then
+    echo "❌ Error: registry.json not found"
+    exit 1
+fi
+
+# Check if jq is available
+if ! command -v jq &> /dev/null; then
+    echo "❌ Error: jq is required but not installed"
+    echo "Install with: sudo dnf install jq"
+    exit 1
+fi
+
+# Function to check if a module file's version was updated
+check_module_version_updated() {
+    local module_file="$1"
+    local module_name=$(basename "$module_file" .sh)
+
+    # Get current version from module file
+    local current_version=$(grep -E '^# Version:' "$module_file" | head -1 | sed -E 's/^# Version: //')
+
+    if [ -z "$current_version" ]; then
+        echo "Warning: No version found in $module_file"
+        return 0
+    fi
+
+    # Get previous version from git (if file existed before)
+    local prev_version=$(git show HEAD:"$module_file" 2>/dev/null | grep -E '^# Version:' | head -1 | sed -E 's/^# Version: //')
+
+    # If file is new or version changed, check registry matches
+    if [ -z "$prev_version" ] || [ "$current_version" != "$prev_version" ]; then
+        # Version was updated or file is new - check registry matches
+        local registry_version=$(jq -r "(.modules[] | select(.id == \"$module_name\") | .version) // empty" registry.json 2>/dev/null)
+
+        if [ -z "$registry_version" ]; then
+            echo "❌ Error: Module '$module_name' not found in registry.json"
+            echo "Please add it to registry.json"
+            exit 1
+        fi
+
+        if [ "$current_version" != "$registry_version" ]; then
+            echo "❌ Error: Version mismatch for module '$module_name'"
+            echo "  Module file: $current_version"
+            echo "  Registry:    $registry_version"
+            echo ""
+            echo "Update registry with:"
+            echo "  ./scripts/update-registry.sh $module_name $current_version"
+            exit 1
+        fi
+
+        if [ -n "$prev_version" ]; then
+            echo "  ✓ Module '$module_name': version updated $prev_version → $current_version"
+        else
+            echo "  ✓ New module '$module_name': version $current_version"
+        fi
+        echo "  ✓ Registry in sync"
+        return 0
+    fi
+
+    # Version wasn't updated - check if file content changed (excluding version line)
+    local current_content=$(grep -vE '^# Version:' "$module_file")
+    local prev_content=$(git show HEAD:"$module_file" 2>/dev/null | grep -vE '^# Version:')
+
+    if [ "$current_content" != "$prev_content" ]; then
+        echo "❌ Error: Module file changed but version not updated: $module_file"
+        echo "  Current version: $current_version"
+        echo ""
+        echo "Please:"
+        echo "  1. Update the version in $module_file"
+        echo "  2. Run: ./scripts/update-registry.sh $module_name <new-version>"
+        exit 1
+    fi
+
+    echo "  ✓ Module '$module_name': no changes (version $current_version)"
+}
+
+# Function to check if component files changed but parent module version wasn't updated
+check_component_changes() {
+    local has_errors=false
+
+    # Get list of changed component files (modules/*/something.sh)
+    local component_files=$(git diff --cached --name-only | grep -E '^modules/[^/]+/.+\.sh$')
+
+    if [ -z "$component_files" ]; then
+        return 0
+    fi
+
+    # Group by parent module
+    declare -A parent_modules
+
+    while IFS= read -r component_file; do
+        # Extract parent module name (e.g., modules/ssh-host-manager/agent.sh -> ssh-host-manager)
+        local parent_module=$(echo "$component_file" | sed -E 's|^modules/([^/]+)/.*|\1|')
+        local parent_file="modules/${parent_module}.sh"
+
+        # Mark this parent module as having component changes
+        parent_modules["$parent_file"]=1
+    done <<< "$component_files"
+
+    # Check each parent module to see if its version was updated
+    for parent_file in "${!parent_modules[@]}"; do
+        if [ ! -f "$parent_file" ]; then
+            continue
+        fi
+
+        # Get current and previous versions
+        local current_version=$(grep -E '^# Version:' "$parent_file" | head -1 | sed -E 's/^# Version: //')
+        local prev_version=$(git show HEAD:"$parent_file" 2>/dev/null | grep -E '^# Version:' | head -1 | sed -E 's/^# Version: //')
+
+        if [ "$current_version" = "$prev_version" ]; then
+            echo "❌ Error: Component files changed but parent module version not updated"
+            echo "  Parent module: $parent_file"
+            echo "  Current version: $current_version"
+            echo ""
+            echo "Changed component files:"
+            git diff --cached --name-only | grep -E "^${parent_file%/*}/.+\.sh$" | sed 's/^/    /'
+            echo ""
+            echo "Please:"
+            echo "  1. Update the version in $parent_file"
+            local module_name=$(basename "$parent_file" .sh)
+            echo "  2. Run: ./scripts/update-registry.sh $module_name <new-version>"
+            has_errors=true
+        else
+            echo "  ✓ Component files: parent module version updated ($prev_version → $current_version)"
+        fi
+    done
+
+    if [ "$has_errors" = true ]; then
+        exit 1
+    fi
+}
+
+# Get list of staged module files
+module_files=$(git diff --cached --name-only | grep -E '^modules/[^/]+\.sh$')
+component_files=$(git diff --cached --name-only | grep -E '^modules/[^/]+/.+\.sh$')
+
+# Check each modified module file
+if [ -n "$module_files" ]; then
+    echo "Validating module versions and registry sync..."
+    while IFS= read -r module_file; do
+        if [ -f "$module_file" ]; then
+            check_module_version_updated "$module_file"
+        fi
+    done <<< "$module_files"
+    echo ""
+fi
+
+# Check for component file changes
+if [ -n "$component_files" ]; then
+    echo "Validating component parent module versions..."
+    check_component_changes
+    echo ""
+fi
+
+# Summary of what was checked
+if [ -n "$module_files" ] || [ -n "$component_files" ]; then
+    echo "✅ All module validation checks passed!"
+else
+    echo "ℹ️  No module files modified - skipping version validation"
+    echo "✅ Pre-commit checks passed!"
+fi
+
+exit 0
