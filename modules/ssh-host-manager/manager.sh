@@ -665,6 +665,34 @@ ssh-host-list() {
     while IFS= read -r line; do
         # Check if this is a managed block
         if [[ "$line" =~ ^#\ Managed\ by\ ssh-host-manager ]]; then
+            # Print accumulated data from previous block if any
+            if [ "$in_managed_block" = true ] && [ -n "$current_host" ]; then
+                local key_expanded="${current_key/#\~/$HOME}"
+                local key_status="✓"
+                if [ ! -f "$key_expanded" ]; then
+                    key_status="✗ (missing)"
+                fi
+
+                echo "Host: $current_host ($current_type)"
+                echo "  Hostname:   $current_hostname"
+                if [ -n "$current_port" ]; then
+                    echo "  Port:       $current_port"
+                fi
+                echo "  User:       $current_user"
+
+                if [ "$current_type" = "git" ]; then
+                    echo "  Git Org:    $current_org"
+                    echo "  Clone dir:  $current_clone_dir"
+                    echo "  Function:   clone-${current_host}"
+                fi
+
+                echo "  Key:        $current_key $key_status"
+                echo "  Connect:    ssh $current_host"
+                echo ""
+
+                found_any=true
+            fi
+
             in_managed_block=true
             _reset_config_vars
 
