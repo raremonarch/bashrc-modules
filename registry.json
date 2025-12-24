@@ -7,7 +7,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/git-aliases.sh",
       "category": "version-control",
-      "dependencies": [],
       "exports": {
         "aliases": [
           "gitaddcommit"
@@ -17,49 +16,11 @@
       }
     },
     {
-      "id": "git-ssh",
-      "description": "SSH key management for Git operations",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/git-ssh.sh",
-      "category": "version-control",
-      "dependencies": [
-        "ssh-agent@0.2.0"
-      ],
-      "exports": {
-        "aliases": [],
-        "functions": [
-          "ssh_load_key_for_url"
-        ],
-        "variables": []
-      }
-    },
-    {
-      "id": "git-clone",
-      "description": "Git repository cloning shortcuts for multiple remotes",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/git-clone.sh",
-      "category": "version-control",
-      "dependencies": [
-        "git-ssh@0.1.0"
-      ],
-      "exports": {
-        "aliases": [],
-        "functions": [
-          "clone-repo",
-          "git-del-branch"
-        ],
-        "variables": [
-          "DEVELOPMENT_DIR"
-        ]
-      }
-    },
-    {
       "id": "docker",
       "description": "Docker cleanup and management functions",
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/docker.sh",
       "category": "containers",
-      "dependencies": [],
       "exports": {
         "aliases": [],
         "functions": [
@@ -75,7 +36,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/python.sh",
       "category": "development",
-      "dependencies": [],
       "exports": {
         "aliases": [],
         "functions": [
@@ -89,37 +49,11 @@
       }
     },
     {
-      "id": "ssh-agent",
-      "description": "SSH agent management with automatic key loading for ssh and git",
-      "version": "0.2.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-agent.sh",
-      "category": "security",
-      "dependencies": [],
-      "exports": {
-        "aliases": [],
-        "functions": [
-          "get_git_ssh_key",
-          "is_key_loaded",
-          "ssh_load_git_key",
-          "get_ssh_key_for_host",
-          "ssh",
-          "git"
-        ],
-        "variables": [
-          "SSH_AUTH_SOCK",
-          "SSH_AGENT_PID"
-        ]
-      }
-    },
-    {
       "id": "ssh-host-manager",
       "description": "Centralized SSH host and key management with dynamic clone function generation",
-      "version": "0.3.0",
+      "version": "0.6.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager.sh",
       "category": "security",
-      "dependencies": [
-        "ssh-agent@0.2.0"
-      ],
       "exports": {
         "aliases": [],
         "functions": [
@@ -138,7 +72,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/aws-wrapper.sh",
       "category": "cloud",
-      "dependencies": [],
       "exports": {
         "aliases": [],
         "functions": [
@@ -153,7 +86,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/aws-profile.sh",
       "category": "cloud",
-      "dependencies": [],
       "exports": {
         "aliases": [],
         "functions": [
@@ -171,7 +103,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/aws-codeartifact.sh",
       "category": "cloud",
-      "dependencies": [],
       "exports": {
         "aliases": [],
         "functions": [
@@ -186,7 +117,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/audio-switching.sh",
       "category": "system",
-      "dependencies": [],
       "exports": {
         "aliases": [],
         "functions": [],
@@ -199,7 +129,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/gh-cli-tool.sh",
       "category": "version-control",
-      "dependencies": [],
       "exports": {
         "aliases": [],
         "functions": [],
@@ -212,7 +141,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/openssl_file_encryption.sh",
       "category": "security",
-      "dependencies": [],
       "exports": {
         "aliases": [],
         "functions": [],
@@ -225,7 +153,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/pyenv.sh",
       "category": "development",
-      "dependencies": [],
       "exports": {
         "aliases": [],
         "functions": [],
@@ -238,7 +165,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/system-aliases.sh",
       "category": "system",
-      "dependencies": [],
       "exports": {
         "aliases": [
           "lsp",
@@ -260,7 +186,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/system-config.sh",
       "category": "system",
-      "dependencies": [],
       "exports": {
         "aliases": [],
         "functions": [
@@ -275,7 +200,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/system-package-manager.sh",
       "category": "system",
-      "dependencies": [],
       "exports": {
         "aliases": [],
         "functions": [
@@ -293,7 +217,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/system-process-utils.sh",
       "category": "system",
-      "dependencies": [],
       "exports": {
         "aliases": [
           "fproc",
@@ -309,7 +232,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/system-reload.sh",
       "category": "system",
-      "dependencies": [],
       "exports": {
         "aliases": [
           "reload"
@@ -324,7 +246,6 @@
       "version": "0.1.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/system-usb.sh",
       "category": "system",
-      "dependencies": [],
       "exports": {
         "aliases": [],
         "functions": [

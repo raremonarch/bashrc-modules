@@ -26,9 +26,13 @@ get_git_ssh_key() {
 
     # Extract hostname from different URL formats
     case "$remote_url" in
-        git@*:*|ssh://git@*)
-            # Extract hostname from git@hostname:repo or ssh://git@hostname/repo
-            ssh_host=$(echo "$remote_url" | sed -E 's|^(git@|ssh://git@)([^:/]+).*|\2|')
+        git@*:*)
+            # Extract hostname from git@hostname:repo format
+            ssh_host=$(echo "$remote_url" | sed -E 's|^git@([^:]+):.*|\1|')
+            ;;
+        ssh://git@*)
+            # Extract hostname from ssh://git@hostname/repo format
+            ssh_host=$(echo "$remote_url" | sed -E 's|^ssh://git@([^:/]+).*|\1|')
             ;;
         https://*)
             # Extract hostname from https://hostname/repo

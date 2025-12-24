@@ -30,7 +30,8 @@ if [ "$1" = "--sync" ]; then
         description=$(grep -E '^# Description:' "$module_file" | head -1 | sed -E 's/^# Description: //')
 
         if [ -n "$version" ]; then
-            jq ".modules.\"$module_name\".version = \"$version\"" registry.json > registry.json.tmp
+            # Registry uses array structure with id field
+            jq "(.modules[] | select(.id == \"$module_name\") | .version) = \"$version\"" registry.json > registry.json.tmp
             mv registry.json.tmp registry.json
             echo "  ✓ $module_name: $version"
         fi
@@ -57,8 +58,8 @@ else
         exit 1
     fi
 
-    # Update registry
-    jq ".modules.\"$module_name\".version = \"$version\"" registry.json > registry.json.tmp
+    # Update registry (array structure with id field)
+    jq "(.modules[] | select(.id == \"$module_name\") | .version) = \"$version\"" registry.json > registry.json.tmp
     mv registry.json.tmp registry.json
 
     echo "✓ Updated registry: $module_name → $version"
