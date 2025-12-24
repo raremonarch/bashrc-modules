@@ -1,8 +1,5 @@
 #!/bin/bash
-# Module: git-ssh
-# Version: 0.1.0
-# Description: SSH key management for Git operations
-# BashMod Dependencies: ssh-agent@0.2.0
+# SSH key management for Git operations
 
 # Function to load SSH key based on a git URL (before cloning)
 ssh_load_key_for_url() {
@@ -34,7 +31,7 @@ ssh_load_key_for_url() {
     # Check if get_ssh_key_for_host is available from ssh-agent.sh
     if ! type get_ssh_key_for_host &>/dev/null; then
         echo "Error: get_ssh_key_for_host function not found"
-        echo "Please ensure ~/.bashrc.d/ssh-agent.sh is loaded"
+        echo "Please ensure ssh-agent.sh is loaded"
         return 1
     fi
 
@@ -54,4 +51,28 @@ ssh_load_key_for_url() {
     # Load the specific key
     echo "Loading SSH key for $ssh_host: $(basename "$key_file")"
     ssh-add "$key_file"
+}
+
+function clone-repo () {
+    if [ -z "$1" ] || [ -z "$2" ]; then
+        echo "Usage: clone-repo <owner> <repo-name>"
+        echo "Examples:"
+        echo "  clone-repo EBSCOIS platform.shared.bookjacket-image-resolver"
+        echo "    -> git@ebscois:EBSCOIS/platform.shared.bookjacket-image-resolver.git"
+        echo "    -> ${CODE_BASE_DIR}/platform.shared.bookjacket-image-resolver"
+        echo ""
+        echo "  clone-repo daevski my-personal-project"
+        echo "    -> git@daevski:daevski/my-personal-project.git"
+        echo "    -> ${CODE_BASE_DIR}/my-personal-project"
+        return 1
+    fi
+
+    local owner="$1"
+    local repo_name="$2"
+    local ssh_host=$(echo "$owner" | tr '[:upper:]' '[:lower:]')
+
+    local git_url="git@${ssh_host}:${owner}/${repo_name}.git"
+    local clone_path="${CODE_BASE_DIR}/${repo_name}"
+
+    ssh_load_key_for_url "$git_url" && command git clone "$git_url" "$clone_path"
 }

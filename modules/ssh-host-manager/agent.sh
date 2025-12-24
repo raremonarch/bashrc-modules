@@ -1,12 +1,5 @@
 #!/bin/bash
-# Module: ssh-agent
-# Version: 0.2.0
-# Description: SSH agent management with automatic key loading for ssh and git
-# BashMod Dependencies: none
-
-# SSH Agent Management
-# Ensures SSH agent is running and available for the session
-# Keys are loaded on-demand when first needed
+# SSH agent management with automatic key loading for ssh and git
 
 # Source the SSH agent environment if it exists
 if [ -f "$HOME/.ssh/ssh-agent.env" ]; then
@@ -27,15 +20,15 @@ get_git_ssh_key() {
     local remote_url
     local ssh_host
     local identity_file
-    
+
     # Get the current git remote URL
     remote_url=$(git remote get-url origin 2>/dev/null) || return 1
-    
+
     # Extract hostname from different URL formats
     case "$remote_url" in
         git@*:*|ssh://git@*)
             # Extract hostname from git@hostname:repo or ssh://git@hostname/repo
-            ssh_host=$(echo "$remote_url" | sed -E 's|^(git@\|ssh://git@)([^:/]+).*|\2|')
+            ssh_host=$(echo "$remote_url" | sed -E 's|^(git@|ssh://git@)([^:/]+).*|\2|')
             ;;
         https://*)
             # Extract hostname from https://hostname/repo
@@ -45,35 +38,18 @@ get_git_ssh_key() {
             return 1
             ;;
     esac
-    
-    # Map common hostnames to SSH config hosts
-    case "$ssh_host" in
-        github.com)
-            # Determine which GitHub account based on repo owner
-            local repo_owner=$(echo "$remote_url" | sed -E 's|.*[:/]([^/]+)/[^/]+\.git.*|\1|')
-            case "$repo_owner" in
-                daevski)
-                    ssh_host="daev"
-                    ;;
-                *)
-                    # Default to work account for other repos
-                    ssh_host="eis"
-                    ;;
-            esac
-            ;;
-    esac
-    
+
     # Look up the identity file for this host in SSH config
     identity_file=$(ssh -G "$ssh_host" 2>/dev/null | grep -E '^identityfile ' | head -1 | awk '{print $2}')
-    
+
     # Expand tilde to home directory
     identity_file="${identity_file/#\~/$HOME}"
-    
+
     if [ -f "$identity_file" ]; then
         echo "$identity_file"
         return 0
     fi
-    
+
     return 1
 }
 
@@ -192,7 +168,7 @@ git() {
     case "$1" in
         push|pull|fetch)
             # Only try to load key if we're in a git repo
-            if git rev-parse --git-dir &>/dev/null; then
+            if command git rev-parse --git-dir &>/dev/null; then
                 ssh_load_git_key || true  # Continue even if key loading fails
             fi
             command git "$@"
