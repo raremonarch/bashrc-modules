@@ -1,7 +1,28 @@
 #!/bin/bash
 # Pre-commit hook to validate module version updates and registry synchronization
+#
+# Skip validation for specific modules using:
+#   SKIP_MODULES="module1,module2" git commit -m "message"
 
 echo "Running pre-commit validation..."
+
+# Parse SKIP_MODULES env var into an associative array
+declare -A skipped_modules
+if [ -n "$SKIP_MODULES" ]; then
+    IFS=',' read -ra _skip_list <<< "$SKIP_MODULES"
+    for _mod in "${_skip_list[@]}"; do
+        # Strip .sh suffix if provided
+        _mod="${_mod%.sh}"
+        skipped_modules["$_mod"]=1
+    done
+    echo "Skipping validation for: ${!skipped_modules[*]}"
+fi
+
+# Check if a module should be skipped
+is_skipped() {
+    local module_name="$1"
+    [[ -n "${skipped_modules[$module_name]+x}" ]]
+}
 
 # Check if registry.json exists
 if [ ! -f "registry.json" ]; then
@@ -21,6 +42,12 @@ check_module_version_updated() {
     local module_file="$1"
     local module_name=$(basename "$module_file" .sh)
 
+    # Check if this module should be skipped
+    if is_skipped "$module_name"; then
+        echo "  ⏭ Module '$module_name': skipped (SKIP_MODULES)"
+        return 0
+    fi
+
     # Get current version from module file
     local current_version=$(grep -E '^# Version:' "$module_file" | head -1 | sed -E 's/^# Version: //')
 
@@ -39,7 +66,9 @@ check_module_version_updated() {
 
         if [ -z "$registry_version" ]; then
             echo "❌ Error: Module '$module_name' not found in registry.json"
-            echo "Please add it to registry.json"
+            echo "  Run: ./scripts/update-registry.sh --all"
+            echo ""
+            echo "  To skip: SKIP_MODULES=\"$module_name\" git commit ..."
             exit 1
         fi
 
@@ -48,8 +77,9 @@ check_module_version_updated() {
             echo "  Module file: $current_version"
             echo "  Registry:    $registry_version"
             echo ""
-            echo "Update registry with:"
-            echo "  ./scripts/update-registry.sh $module_name $current_version"
+            echo "  Run: ./scripts/update-registry.sh $module_name $current_version"
+            echo ""
+            echo "  To skip: SKIP_MODULES=\"$module_name\" git commit ..."
             exit 1
         fi
 
@@ -70,9 +100,10 @@ check_module_version_updated() {
         echo "❌ Error: Module file changed but version not updated: $module_file"
         echo "  Current version: $current_version"
         echo ""
-        echo "Please:"
         echo "  1. Update the version in $module_file"
         echo "  2. Run: ./scripts/update-registry.sh $module_name <new-version>"
+        echo ""
+        echo "  To skip: SKIP_MODULES=\"$module_name\" git commit ..."
         exit 1
     fi
 
@@ -104,6 +135,14 @@ check_component_changes() {
 
     # Check each parent module to see if its version was updated
     for parent_file in "${!parent_modules[@]}"; do
+        local module_name=$(basename "$parent_file" .sh)
+
+        # Check if this module should be skipped
+        if is_skipped "$module_name"; then
+            echo "  ⏭ Component '$module_name': skipped (SKIP_MODULES)"
+            continue
+        fi
+
         if [ ! -f "$parent_file" ]; then
             continue
         fi
@@ -120,10 +159,10 @@ check_component_changes() {
             echo "Changed component files:"
             git diff --cached --name-only | grep -E "^${parent_file%/*}/.+\.sh$" | sed 's/^/    /'
             echo ""
-            echo "Please:"
             echo "  1. Update the version in $parent_file"
-            local module_name=$(basename "$parent_file" .sh)
             echo "  2. Run: ./scripts/update-registry.sh $module_name <new-version>"
+            echo ""
+            echo "  To skip: SKIP_MODULES=\"$module_name\" git commit ..."
             has_errors=true
         else
             echo "  ✓ Component files: parent module version updated ($prev_version → $current_version)"

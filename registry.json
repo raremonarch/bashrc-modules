@@ -57,12 +57,25 @@
       "exports": {
         "aliases": [],
         "functions": [
+          "clone-repo",
+          "get_git_ssh_key",
+          "get_ssh_key_for_host",
+          "git",
+          "is_key_loaded",
+          "ssh",
           "ssh-host-add",
+          "ssh-host-list",
           "ssh-host-remove",
-          "ssh-host-list"
+          "ssh_load_git_key",
+          "ssh_load_key_for_url"
         ],
         "variables": [
-          "SSH_CONFIG"
+          "CODE_BASE_DIR",
+          "SSH_CONFIG",
+          "SSH_HOST_MANAGER_AUTO_ALIAS",
+          "SSH_HOST_MANAGER_AUTO_CLONE_DIR",
+          "SSH_HOST_MANAGER_CLONE_DIR_BASE",
+          "SSH_HOST_MANAGER_DIR"
         ]
       },
       "files": [
@@ -282,6 +295,36 @@
         "aliases": [],
         "functions": [
           "bak"
+        ],
+        "variables": []
+      }
+    },
+    {
+      "id": "openssh-pfx",
+      "description": "a script for extracting crt and key.pem from pfx file",
+      "version": "0.1.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/openssh-pfx.sh",
+      "category": "system",
+      "exports": {
+        "aliases": [],
+        "functions": [
+          "extract_pfx"
+        ],
+        "variables": []
+      }
+    },
+    {
+      "id": "openssl-file-encryption",
+      "description": "File encryption and decryption using OpenSSL",
+      "version": "0.1.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/openssl-file-encryption.sh",
+      "category": "security",
+      "exports": {
+        "aliases": [],
+        "functions": [
+          "osdec",
+          "osenc",
+          "osenc_get_passfile"
         ],
         "variables": []
       }
