@@ -3,6 +3,10 @@
 
 REPO_BASE_URL="https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules"
 
+# Always run from the repo root so relative paths (registry.json, modules/) work
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.." || { echo "Error: could not cd to repo root"; exit 1; }
+
 if [ $# -eq 0 ]; then
     echo "Usage:"
     echo "  $0 <module-name> <version>     # Update specific module"
@@ -21,10 +25,6 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
-<<<<<<< Updated upstream
-if [ "$1" = "--sync" ]; then
-    echo "Syncing all module versions from files to registry..."
-=======
 # Extract exports from a single file (internal helper)
 extract_exports_from_file() {
     local file="$1"
@@ -206,7 +206,6 @@ module_in_registry() {
 
 if [ "$1" = "--all" ]; then
     echo "Updating all module versions and exports in registry..."
->>>>>>> Stashed changes
 
     for module_file in modules/*.sh; do
         [ -f "$module_file" ] || continue
@@ -215,15 +214,9 @@ if [ "$1" = "--all" ]; then
         version=$(grep -E '^# Version:' "$module_file" | head -1 | sed -E 's/^# Version: //')
         description=$(grep -E '^# Description:' "$module_file" | head -1 | sed -E 's/^# Description: //')
 
-<<<<<<< Updated upstream
-        if [ -n "$version" ]; then
-            # Registry uses array structure with id field
-            jq "(.modules[] | select(.id == \"$module_name\") | .version) = \"$version\"" registry.json > registry.json.tmp
-            mv registry.json.tmp registry.json
-            echo "  ✓ $module_name: $version"
-=======
         if module_in_registry "$module_name"; then
             if [ -n "$version" ]; then
+                exports=$(extract_exports "$module_file")
                 # Update version and exports in registry
                 jq --arg name "$module_name" --arg ver "$version" --argjson exports "$exports" \
                     '(.modules[] | select(.id == $name)) |= (.version = $ver | .exports = $exports)' \
@@ -233,7 +226,6 @@ if [ "$1" = "--all" ]; then
             fi
         else
             add_new_module "$module_file"
->>>>>>> Stashed changes
         fi
     done
 
@@ -266,11 +258,6 @@ else
         exit 1
     fi
 
-<<<<<<< Updated upstream
-    # Update registry (array structure with id field)
-    jq "(.modules[] | select(.id == \"$module_name\") | .version) = \"$version\"" registry.json > registry.json.tmp
-    mv registry.json.tmp registry.json
-=======
     # Check if module exists in registry; if not, offer to add it
     if ! module_in_registry "$module_name"; then
         echo "Module '$module_name' not found in registry."
@@ -287,7 +274,6 @@ else
 
         echo "✓ Updated registry: $module_name → $version"
     fi
->>>>>>> Stashed changes
 
     echo ""
     echo "Don't forget to stage registry.json:"

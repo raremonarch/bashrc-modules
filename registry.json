@@ -11,7 +11,9 @@
         "aliases": [
           "gitaddcommit"
         ],
-        "functions": [],
+        "functions": [
+          "git-del-branch"
+        ],
         "variables": []
       }
     },
@@ -40,10 +42,10 @@
         "aliases": [],
         "functions": [
           "cdpydev",
+          "coverage-check",
           "poetryreq",
           "pycov",
-          "pycov-all",
-          "coverage-check"
+          "pycov-all"
         ],
         "variables": []
       }
@@ -145,11 +147,14 @@
     {
       "id": "audio-switching",
       "description": "Audio device switching utilities",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/audio-switching.sh",
       "category": "system",
       "exports": {
-        "aliases": [],
+        "aliases": [
+          "headset",
+          "speakers"
+        ],
         "functions": [],
         "variables": []
       }
@@ -162,7 +167,10 @@
       "category": "version-control",
       "exports": {
         "aliases": [],
-        "functions": [],
+        "functions": [
+          "gh-del-workflow-name",
+          "gh-run-info"
+        ],
         "variables": []
       }
     },
@@ -187,7 +195,10 @@
       "exports": {
         "aliases": [],
         "functions": [],
-        "variables": []
+        "variables": [
+          "PATH",
+          "PYENV_ROOT"
+        ]
       }
     },
     {
@@ -198,11 +209,11 @@
       "category": "system",
       "exports": {
         "aliases": [
-          "lsp",
           "calc",
-          "pwdsize",
-          "llama",
           "kit",
+          "llama",
+          "lsp",
+          "pwdsize",
           "ssh-macmini"
         ],
         "functions": [
@@ -237,9 +248,7 @@
           "addpack",
           "rmpack"
         ],
-        "variables": [
-          "mypackages_file"
-        ]
+        "variables": []
       }
     },
     {
