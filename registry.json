@@ -97,18 +97,6 @@
       }
     },
     {
-      "id": "openssl_file_encryption",
-      "description": "File encryption and decryption using OpenSSL",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/openssl_file_encryption.sh",
-      "category": "security",
-      "exports": {
-        "aliases": [],
-        "functions": [],
-        "variables": []
-      }
-    },
-    {
       "id": "system-process-utils",
       "description": "Process management utilities and aliases",
       "version": "0.1.0",
