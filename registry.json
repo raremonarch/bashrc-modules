@@ -33,24 +33,6 @@
       }
     },
     {
-      "id": "python",
-      "description": "Python development helpers for poetry, pytest, and coverage",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/python.sh",
-      "category": "development",
-      "exports": {
-        "aliases": [],
-        "functions": [
-          "cdpydev",
-          "coverage-check",
-          "poetryreq",
-          "pycov",
-          "pycov-all"
-        ],
-        "variables": []
-      }
-    },
-    {
       "id": "ssh-host-manager",
       "description": "Centralized SSH host and key management with dynamic clone function generation",
       "version": "0.6.4",
@@ -100,66 +82,6 @@
       ]
     },
     {
-      "id": "aws-wrapper",
-      "description": "AWS CLI wrapper that auto-appends profile flag",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/aws-wrapper.sh",
-      "category": "cloud",
-      "exports": {
-        "aliases": [],
-        "functions": [
-          "aws"
-        ],
-        "variables": []
-      }
-    },
-    {
-      "id": "aws-profile",
-      "description": "AWS profile management and SSO login helpers",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/aws-profile.sh",
-      "category": "cloud",
-      "exports": {
-        "aliases": [],
-        "functions": [
-          "aws-login-novelist-deploy-pipelineuser",
-          "aws-set-profile"
-        ],
-        "variables": [
-          "AWS_PROFILE"
-        ]
-      }
-    },
-    {
-      "id": "aws-codeartifact",
-      "description": "AWS CodeArtifact authentication utilities",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/aws-codeartifact.sh",
-      "category": "cloud",
-      "exports": {
-        "aliases": [],
-        "functions": [
-          "aws-codeartifact-login"
-        ],
-        "variables": []
-      }
-    },
-    {
-      "id": "audio-switching",
-      "description": "Audio device switching utilities",
-      "version": "0.1.1",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/audio-switching.sh",
-      "category": "system",
-      "exports": {
-        "aliases": [
-          "headset",
-          "speakers"
-        ],
-        "functions": [],
-        "variables": []
-      }
-    },
-    {
       "id": "gh-cli-tool",
       "description": "GitHub CLI helper functions",
       "version": "0.1.0",
@@ -183,71 +105,6 @@
       "exports": {
         "aliases": [],
         "functions": [],
-        "variables": []
-      }
-    },
-    {
-      "id": "pyenv",
-      "description": "Pyenv initialization and configuration",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/pyenv.sh",
-      "category": "development",
-      "exports": {
-        "aliases": [],
-        "functions": [],
-        "variables": [
-          "PATH",
-          "PYENV_ROOT"
-        ]
-      }
-    },
-    {
-      "id": "system-aliases",
-      "description": "Common system aliases and helper discovery function",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/system-aliases.sh",
-      "category": "system",
-      "exports": {
-        "aliases": [
-          "calc",
-          "kit",
-          "llama",
-          "lsp",
-          "pwdsize",
-          "ssh-macmini"
-        ],
-        "functions": [
-          "aliases"
-        ],
-        "variables": []
-      }
-    },
-    {
-      "id": "system-config",
-      "description": "Configuration file editing shortcuts",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/system-config.sh",
-      "category": "system",
-      "exports": {
-        "aliases": [],
-        "functions": [
-          "confi3"
-        ],
-        "variables": []
-      }
-    },
-    {
-      "id": "system-package-manager",
-      "description": "Package management utilities for Fedora DNF",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/system-package-manager.sh",
-      "category": "system",
-      "exports": {
-        "aliases": [],
-        "functions": [
-          "addpack",
-          "rmpack"
-        ],
         "variables": []
       }
     },
