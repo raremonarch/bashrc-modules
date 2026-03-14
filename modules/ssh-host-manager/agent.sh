@@ -115,6 +115,74 @@ get_ssh_key_for_host() {
     return 1
 }
 
+# Load all SSH keys from managed hosts into the agent
+ssh-keys-load() {
+    local keys=()
+    local loaded=0
+    local skipped=0
+    local failed=0
+
+    # Collect unique identity files from managed SSH config entries
+    local in_managed=false
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^#\ Managed\ by\ ssh-host-manager ]]; then
+            in_managed=true
+        elif [[ "$in_managed" == true ]] && [[ "$line" =~ ^[[:space:]]+IdentityFile\ (.+)$ ]]; then
+            local key="${BASH_REMATCH[1]}"
+            key="${key/#\~/$HOME}"
+            # Add to array if not already present
+            local already=false
+            for k in "${keys[@]}"; do
+                if [[ "$k" == "$key" ]]; then
+                    already=true
+                    break
+                fi
+            done
+            if [[ "$already" == false ]]; then
+                keys+=("$key")
+            fi
+        elif [[ -z "$line" ]] && [[ "$in_managed" == true ]]; then
+            in_managed=false
+        fi
+    done < "${SSH_CONFIG:-$HOME/.ssh/config}"
+
+    if [[ ${#keys[@]} -eq 0 ]]; then
+        echo "No managed SSH keys found"
+        return 0
+    fi
+
+    echo "Loading ${#keys[@]} SSH key(s) into agent..."
+    echo ""
+
+    for key in "${keys[@]}"; do
+        local keyname
+        keyname=$(basename "$key")
+
+        if [[ ! -f "$key" ]]; then
+            echo "  ✗ $keyname (file not found)"
+            ((failed++))
+            continue
+        fi
+
+        if is_key_loaded "$key"; then
+            echo "  - $keyname (already loaded)"
+            ((skipped++))
+            continue
+        fi
+
+        echo "  Loading $keyname..."
+        if ssh-add "$key"; then
+            ((loaded++))
+        else
+            echo "  ✗ $keyname (failed to add)"
+            ((failed++))
+        fi
+    done
+
+    echo ""
+    echo "Done: $loaded loaded, $skipped already loaded, $failed failed"
+}
+
 # Override ssh command to auto-load SSH keys
 ssh() {
     local key_file=""

@@ -258,6 +258,16 @@ else
         exit 1
     fi
 
+    # Update version in the module file header
+    current_version=$(grep -E '^# Version:' "$module_file" | head -1 | sed -E 's/^# Version: //')
+    if [ -n "$current_version" ] && [ "$current_version" != "$version" ]; then
+        sed -i "s/^# Version: ${current_version}$/# Version: ${version}/" "$module_file"
+        echo "✓ Updated module file: $module_name $current_version → $version"
+    elif [ -z "$current_version" ]; then
+        _insert_header_field "$module_file" "Version" "$version"
+        echo "✓ Added version header to module file: $module_name $version"
+    fi
+
     # Check if module exists in registry; if not, offer to add it
     if ! module_in_registry "$module_name"; then
         echo "Module '$module_name' not found in registry."
@@ -276,6 +286,7 @@ else
     fi
 
     echo ""
-    echo "Don't forget to stage registry.json:"
+    echo "Don't forget to stage updated files:"
     echo "  git add registry.json"
+    echo "  git add $module_file"
 fi
