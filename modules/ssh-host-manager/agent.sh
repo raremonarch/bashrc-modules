@@ -1,6 +1,15 @@
 #!/bin/bash
 # SSH agent management with automatic key loading for ssh and git
 
+# Ensure SSH directory exists before anything else
+mkdir -p "$HOME/.ssh"
+
+# Check that ssh-agent is available
+if ! command -v ssh-agent &>/dev/null; then
+    echo "ssh-host-manager: 'ssh-agent' not found. Please install OpenSSH (e.g. 'sudo apt install openssh-client' or 'sudo dnf install openssh')." >&2
+    return 0
+fi
+
 # Source the SSH agent environment if it exists
 if [ -f "$HOME/.ssh/ssh-agent.env" ]; then
     source "$HOME/.ssh/ssh-agent.env" > /dev/null
