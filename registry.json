@@ -35,7 +35,7 @@
     {
       "id": "ssh-host-manager",
       "description": "Centralized SSH host and key management with dynamic clone function generation",
-      "version": "0.6.6",
+      "version": "0.6.7",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager.sh",
       "category": "security",
       "exports": {
@@ -115,7 +115,7 @@
     {
       "id": "system-reload",
       "description": "Shell reload utility",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/system-reload.sh",
       "category": "system",
       "exports": {

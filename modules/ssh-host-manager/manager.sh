@@ -83,7 +83,10 @@ _find_matching_key() {
     while IFS= read -r pubkey; do
         local privkey="${pubkey%.pub}"
         local keyname=$(basename "$privkey")
-        if [ -f "$privkey" ] && [[ "$keyname" =~ (^|[_-])${org}([_-]|$) ]] || [[ "${keyname,,}" == *"${org,,}"* ]]; then
+        local keyname_lower org_lower
+        keyname_lower=$(echo "$keyname" | tr '[:upper:]' '[:lower:]')
+        org_lower=$(echo "$org" | tr '[:upper:]' '[:lower:]')
+        if [ -f "$privkey" ] && [[ "$keyname" =~ (^|[_-])${org}([_-]|$) ]] || [[ "$keyname_lower" == *"$org_lower"* ]]; then
             matching_key="$privkey"
             break
         fi
@@ -698,13 +701,13 @@ ssh-host-list() {
 
             # Parse metadata from single-line comment format
             if [[ "$line" =~ type=([^,\)]+) ]]; then
-                current_type="${BASH_REMATCH[1]}"
+                current_type="${BASH_REMATCH[1]:-${match[1]}}"
             fi
             if [[ "$line" =~ org=([^,\)]+) ]]; then
-                current_org="${BASH_REMATCH[1]}"
+                current_org="${BASH_REMATCH[1]:-${match[1]}}"
             fi
             if [[ "$line" =~ clone_dir=([^\)]+) ]]; then
-                current_clone_dir="${BASH_REMATCH[1]}"
+                current_clone_dir="${BASH_REMATCH[1]:-${match[1]}}"
             fi
             continue
         fi
@@ -712,16 +715,16 @@ ssh-host-list() {
         if [ "$in_managed_block" = true ]; then
             # Parse Host entry
             if [[ "$line" =~ ^Host\ (.+)$ ]]; then
-                current_host="${BASH_REMATCH[1]}"
+                current_host="${BASH_REMATCH[1]:-${match[1]}}"
             # Parse config values
             elif [[ "$line" =~ ^[[:space:]]+HostName\ (.+)$ ]]; then
-                current_hostname="${BASH_REMATCH[1]}"
+                current_hostname="${BASH_REMATCH[1]:-${match[1]}}"
             elif [[ "$line" =~ ^[[:space:]]+User\ (.+)$ ]]; then
-                current_user="${BASH_REMATCH[1]}"
+                current_user="${BASH_REMATCH[1]:-${match[1]}}"
             elif [[ "$line" =~ ^[[:space:]]+Port\ (.+)$ ]]; then
-                current_port="${BASH_REMATCH[1]}"
+                current_port="${BASH_REMATCH[1]:-${match[1]}}"
             elif [[ "$line" =~ ^[[:space:]]+IdentityFile\ (.+)$ ]]; then
-                current_key="${BASH_REMATCH[1]}"
+                current_key="${BASH_REMATCH[1]:-${match[1]}}"
             # Empty line or next Host block - print accumulated data
             elif [[ -z "$line" || "$line" =~ ^Host\ .+ || "$line" =~ ^#\ Managed\ by\ .+ ]]; then
                 if [ -n "$current_host" ]; then

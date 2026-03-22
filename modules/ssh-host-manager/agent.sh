@@ -137,7 +137,7 @@ ssh-keys-load() {
         if [[ "$line" =~ ^#\ Managed\ by\ ssh-host-manager ]]; then
             in_managed=true
         elif [[ "$in_managed" == true ]] && [[ "$line" =~ ^[[:space:]]+IdentityFile\ (.+)$ ]]; then
-            local key="${BASH_REMATCH[1]}"
+            local key="${BASH_REMATCH[1]:-${match[1]}}"
             key="${key/#\~/$HOME}"
             # Add to array if not already present
             local already=false
