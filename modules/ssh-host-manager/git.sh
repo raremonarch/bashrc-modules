@@ -104,7 +104,7 @@ function clone-repo () {
     if [ -n "$clone_dir" ]; then
         clone_path="${clone_dir}/${repo_name}"
     else
-        clone_path="${CODE_BASE_DIR}/${repo_name}"
+        clone_path="${CODE_BASE_DIR}/${ssh_host}/${repo_name}"
     fi
 
     echo "Cloning ${owner}/${repo_name}..."
