@@ -53,6 +53,51 @@ ssh_load_key_for_url() {
     ssh-add "$key_file"
 }
 
+# Check a freshly cloned repo for known hook installation mechanisms and
+# echo the appropriate setup command. Checks in order of specificity.
+_suggest_git_hooks() {
+    local repo="$1"
+    local cmd="" label=""
+
+    if [ -d "$repo/scripts/hooks" ]; then
+        cmd="git config core.hooksPath scripts/hooks"
+        label="scripts/hooks"
+    elif [ -d "$repo/.githooks" ]; then
+        cmd="git config core.hooksPath .githooks"
+        label=".githooks"
+    elif [ -d "$repo/.git-hooks" ]; then
+        cmd="git config core.hooksPath .git-hooks"
+        label=".git-hooks"
+    elif [ -f "$repo/.pre-commit-config.yaml" ]; then
+        cmd="pre-commit install"
+        label="pre-commit"
+    elif [ -f "$repo/lefthook.yml" ] || [ -f "$repo/lefthook.toml" ]; then
+        cmd="lefthook install"
+        label="lefthook"
+    elif [ -d "$repo/.husky" ]; then
+        cmd="npm run prepare"
+        label="husky"
+    fi
+
+    if [ -n "$cmd" ]; then
+        local full_cmd
+        if [ "$repo" = "." ]; then
+            full_cmd="$cmd"
+        else
+            full_cmd="cd $repo && $cmd"
+        fi
+        echo ""
+        echo "  ⚙ Git hooks detected ($label)."
+        read -r -p "     Install now? ($cmd) [Y/n] " reply
+        reply="${reply:-y}"
+        if [[ "$reply" =~ ^[Yy] ]]; then
+            (cd "$repo" && eval "$cmd")
+        else
+            echo "     Skipped. To install later: $full_cmd"
+        fi
+    fi
+}
+
 function clone-repo () {
     if [ -z "$1" ] || [ -z "$2" ]; then
         echo "Usage: clone-repo <owner> <repo-name>"
@@ -104,12 +149,17 @@ function clone-repo () {
     if [ -n "$clone_dir" ]; then
         clone_path="${clone_dir}/${repo_name}"
     else
-        clone_path="${CODE_BASE_DIR}/${ssh_host}/${repo_name}"
+        clone_path="${BASHRCMODS_CODE_BASE_DIR}/${ssh_host}/${repo_name}"
     fi
 
     echo "Cloning ${owner}/${repo_name}..."
     echo "  URL: $git_url"
     echo "  Path: $clone_path"
 
-    ssh_load_key_for_url "$git_url" && command git clone "$git_url" "$clone_path"
+    if ssh_load_key_for_url "$git_url" && command git clone "$git_url" "$clone_path"; then
+        local default_branch
+        default_branch=$(git -C "$clone_path" symbolic-ref --short HEAD 2>/dev/null || echo "main")
+        printf "%s\n%s\n" "$git_url" "$default_branch" > "$clone_path/.gitremote"
+        _suggest_git_hooks "$clone_path"
+    fi
 }

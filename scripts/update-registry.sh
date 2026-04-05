@@ -103,6 +103,29 @@ extract_exports() {
         '{aliases: $aliases, functions: $functions, variables: $variables}'
 }
 
+# Build the files array for a module that has a sub-directory (e.g. ssh-host-manager/)
+# Scans modules/<name>/ for .sh and .md files and returns a JSON array of {path, url} objects.
+# Returns "[]" (no files field) if no sub-directory exists.
+build_files_array() {
+    local module_name="$1"
+    local module_dir="modules/${module_name}"
+
+    if [ ! -d "$module_dir" ]; then
+        echo "[]"
+        return
+    fi
+
+    local files_json="[]"
+    while IFS= read -r file; do
+        local rel_path="${file#modules/}"
+        local url="${REPO_BASE_URL}/${rel_path}"
+        files_json=$(echo "$files_json" | jq --arg path "$rel_path" --arg url "$url" \
+            '. += [{path: $path, url: $url}]')
+    done < <(find "$module_dir" -maxdepth 1 \( -name "*.sh" -o -name "*.md" \) | sort)
+
+    echo "$files_json"
+}
+
 # Get existing categories from registry for display
 get_existing_categories() {
     jq -r '.modules[].category' registry.json | sort -u
@@ -161,15 +184,24 @@ add_new_module() {
         return
     fi
 
-    # Extract exports
+    # Extract exports and sub-directory files
     local exports=$(extract_exports "$module_file")
     local url="${REPO_BASE_URL}/${module_name}.sh"
+    local files_json=$(build_files_array "$module_name")
 
-    # Add to registry
-    jq --arg id "$module_name" --arg desc "$description" --arg ver "$version" \
-       --arg url "$url" --arg cat "$category" --argjson exports "$exports" \
-       '.modules += [{id: $id, description: $desc, version: $ver, url: $url, category: $cat, exports: $exports}]' \
-       registry.json > registry.json.tmp
+    # Add to registry (include files array only if sub-directory exists)
+    if [ "$files_json" != "[]" ]; then
+        jq --arg id "$module_name" --arg desc "$description" --arg ver "$version" \
+           --arg url "$url" --arg cat "$category" --argjson exports "$exports" \
+           --argjson files "$files_json" \
+           '.modules += [{id: $id, description: $desc, version: $ver, url: $url, category: $cat, exports: $exports, files: $files}]' \
+           registry.json > registry.json.tmp
+    else
+        jq --arg id "$module_name" --arg desc "$description" --arg ver "$version" \
+           --arg url "$url" --arg cat "$category" --argjson exports "$exports" \
+           '.modules += [{id: $id, description: $desc, version: $ver, url: $url, category: $cat, exports: $exports}]' \
+           registry.json > registry.json.tmp
+    fi
     mv registry.json.tmp registry.json
 
     echo "  ✓ Added $module_name ($version) to registry"
@@ -217,10 +249,17 @@ if [ "$1" = "--all" ]; then
         if module_in_registry "$module_name"; then
             if [ -n "$version" ]; then
                 exports=$(extract_exports "$module_file")
-                # Update version and exports in registry
-                jq --arg name "$module_name" --arg ver "$version" --argjson exports "$exports" \
-                    '(.modules[] | select(.id == $name)) |= (.version = $ver | .exports = $exports)' \
-                    registry.json > registry.json.tmp
+                files_json=$(build_files_array "$module_name")
+                if [ "$files_json" != "[]" ]; then
+                    jq --arg name "$module_name" --arg ver "$version" \
+                       --argjson exports "$exports" --argjson files "$files_json" \
+                       '(.modules[] | select(.id == $name)) |= (.version = $ver | .exports = $exports | .files = $files)' \
+                       registry.json > registry.json.tmp
+                else
+                    jq --arg name "$module_name" --arg ver "$version" --argjson exports "$exports" \
+                        '(.modules[] | select(.id == $name)) |= (.version = $ver | .exports = $exports)' \
+                        registry.json > registry.json.tmp
+                fi
                 mv registry.json.tmp registry.json
                 echo "  ✓ $module_name: $version"
             fi
@@ -273,13 +312,20 @@ else
         echo "Module '$module_name' not found in registry."
         add_new_module "$module_file"
     else
-        # Extract exports from module
+        # Extract exports and sub-directory files from module
         exports=$(extract_exports "$module_file")
+        files_json=$(build_files_array "$module_name")
 
-        # Update registry with version and exports
-        jq --arg name "$module_name" --arg ver "$version" --argjson exports "$exports" \
-            '(.modules[] | select(.id == $name)) |= (.version = $ver | .exports = $exports)' \
-            registry.json > registry.json.tmp
+        if [ "$files_json" != "[]" ]; then
+            jq --arg name "$module_name" --arg ver "$version" \
+               --argjson exports "$exports" --argjson files "$files_json" \
+               '(.modules[] | select(.id == $name)) |= (.version = $ver | .exports = $exports | .files = $files)' \
+               registry.json > registry.json.tmp
+        else
+            jq --arg name "$module_name" --arg ver "$version" --argjson exports "$exports" \
+                '(.modules[] | select(.id == $name)) |= (.version = $ver | .exports = $exports)' \
+                registry.json > registry.json.tmp
+        fi
         mv registry.json.tmp registry.json
 
         echo "✓ Updated registry: $module_name → $version"

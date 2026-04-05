@@ -35,7 +35,7 @@
     {
       "id": "ssh-host-manager",
       "description": "Centralized SSH host and key management with dynamic clone function generation",
-      "version": "0.6.8",
+      "version": "0.7.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager.sh",
       "category": "security",
       "exports": {
@@ -45,6 +45,7 @@
           "get_git_ssh_key",
           "get_ssh_key_for_host",
           "git",
+          "git-setup",
           "is_key_loaded",
           "ssh",
           "ssh-host-add",
@@ -55,11 +56,11 @@
           "ssh_load_key_for_url"
         ],
         "variables": [
-          "CODE_BASE_DIR",
+          "BASHRCMODS_CODE_BASE_DIR",
+          "BASHRCMODS_SSH_AUTO_ALIAS",
+          "BASHRCMODS_SSH_AUTO_CLONE_DIR",
+          "BASHRCMODS_SSH_CLONE_DIR_BASE",
           "SSH_CONFIG",
-          "SSH_HOST_MANAGER_AUTO_ALIAS",
-          "SSH_HOST_MANAGER_AUTO_CLONE_DIR",
-          "SSH_HOST_MANAGER_CLONE_DIR_BASE",
           "SSH_HOST_MANAGER_DIR"
         ]
       },
@@ -79,8 +80,28 @@
         {
           "path": "ssh-host-manager/README.md",
           "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager/README.md"
+        },
+        {
+          "path": "ssh-host-manager/sync.sh",
+          "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager/sync.sh"
         }
       ]
+    },
+    {
+      "id": "shell-utils",
+      "description": "Shell introspection utilities",
+      "version": "0.1.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/shell-utils.sh",
+      "category": "system",
+      "exports": {
+        "aliases": [],
+        "functions": [
+          "aliases"
+        ],
+        "variables": [
+          "BASHRCMODS_MODULES_DIR"
+        ]
+      }
     },
     {
       "id": "gh-cli-tool",

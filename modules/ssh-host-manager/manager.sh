@@ -2,9 +2,9 @@
 # Core SSH host management with dynamic clone function generation
 
 # Configuration options (can be overridden before sourcing this module)
-SSH_HOST_MANAGER_AUTO_ALIAS="${SSH_HOST_MANAGER_AUTO_ALIAS:-true}"           # Auto-use org name as alias for Git hosts
-SSH_HOST_MANAGER_AUTO_CLONE_DIR="${SSH_HOST_MANAGER_AUTO_CLONE_DIR:-true}"   # Auto-set clone dir to ~/code/<org>
-SSH_HOST_MANAGER_CLONE_DIR_BASE="${SSH_HOST_MANAGER_CLONE_DIR_BASE:-${CODE_BASE_DIR:-$HOME/code}}"  # Base directory for Git clones
+BASHRCMODS_SSH_AUTO_ALIAS="${BASHRCMODS_SSH_AUTO_ALIAS:-true}"           # Auto-use org name as alias for Git hosts
+BASHRCMODS_SSH_AUTO_CLONE_DIR="${BASHRCMODS_SSH_AUTO_CLONE_DIR:-true}"   # Auto-set clone dir to ~/code/<org>
+BASHRCMODS_SSH_CLONE_DIR_BASE="${BASHRCMODS_SSH_CLONE_DIR_BASE:-${BASHRCMODS_CODE_BASE_DIR:-$HOME/code}}"  # Base directory for Git clones
 
 # SSH config file location
 SSH_CONFIG="${SSH_CONFIG:-$HOME/.ssh/config}"
@@ -58,11 +58,11 @@ _show_help() {
     echo "  --key <path>            Use an existing SSH key at the specified path"
     echo ""
     echo "Configuration:"
-    echo "  SSH_HOST_MANAGER_AUTO_ALIAS=${SSH_HOST_MANAGER_AUTO_ALIAS}"
+    echo "  BASHRCMODS_SSH_AUTO_ALIAS=${BASHRCMODS_SSH_AUTO_ALIAS}"
     echo "    Auto-use org name as alias for Git hosts (set to 'false' to prompt)"
-    echo "  SSH_HOST_MANAGER_AUTO_CLONE_DIR=${SSH_HOST_MANAGER_AUTO_CLONE_DIR}"
+    echo "  BASHRCMODS_SSH_AUTO_CLONE_DIR=${BASHRCMODS_SSH_AUTO_CLONE_DIR}"
     echo "    Auto-set clone directory (set to 'false' to prompt)"
-    echo "  SSH_HOST_MANAGER_CLONE_DIR_BASE=${SSH_HOST_MANAGER_CLONE_DIR_BASE}"
+    echo "  BASHRCMODS_SSH_CLONE_DIR_BASE=${BASHRCMODS_SSH_CLONE_DIR_BASE}"
     echo "    Base directory for Git clones"
     echo ""
     echo "Examples:"
@@ -71,8 +71,8 @@ _show_help() {
     echo "  ssh-host-add github.com --host-alias gh-work"
     echo ""
     echo "To customize behavior, set variables before sourcing this module:"
-    echo "  export SSH_HOST_MANAGER_AUTO_ALIAS=false"
-    echo "  export SSH_HOST_MANAGER_CLONE_DIR_BASE=~/projects"
+    echo "  export BASHRCMODS_SSH_AUTO_ALIAS=false"
+    echo "  export BASHRCMODS_SSH_CLONE_DIR_BASE=~/projects"
 }
 
 # Helper function to find matching SSH key for org
@@ -410,7 +410,7 @@ ssh-host-add() {
         # Use org as alias (or override if provided)
         if [ -n "$alias_override" ]; then
             host_alias="$alias_override"
-        elif [ "$SSH_HOST_MANAGER_AUTO_ALIAS" = "true" ]; then
+        elif [ "$BASHRCMODS_SSH_AUTO_ALIAS" = "true" ]; then
             host_alias="$org"
         else
             read -p "Host alias [$org]: " host_alias
@@ -418,13 +418,13 @@ ssh-host-add() {
         fi
 
         # Set clone directory
-        if [ "$SSH_HOST_MANAGER_AUTO_CLONE_DIR" = "true" ]; then
+        if [ "$BASHRCMODS_SSH_AUTO_CLONE_DIR" = "true" ]; then
             # Auto-set to <base>/<org>
-            clone_dir="${SSH_HOST_MANAGER_CLONE_DIR_BASE}/$org"
+            clone_dir="${BASHRCMODS_SSH_CLONE_DIR_BASE}/$org"
             # Convert to tilde notation if under $HOME
             clone_dir="${clone_dir/#$HOME/\~}"
         else
-            local default_clone_dir="${SSH_HOST_MANAGER_CLONE_DIR_BASE}/$org"
+            local default_clone_dir="${BASHRCMODS_SSH_CLONE_DIR_BASE}/$org"
             default_clone_dir="${default_clone_dir/#$HOME/\~}"
             read -p "Clone directory [$default_clone_dir]: " clone_dir
             clone_dir="${clone_dir:-$default_clone_dir}"

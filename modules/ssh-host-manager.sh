@@ -1,11 +1,11 @@
 #!/bin/bash
 # Module: ssh-host-manager
-# Version: 0.6.8
+# Version: 0.7.0
 # Description: Comprehensive SSH and Git host management suite
 # BashMod Dependencies: none
 
 # Global configuration (can be overridden before sourcing this module)
-export CODE_BASE_DIR="${CODE_BASE_DIR:-$HOME/code}"
+export BASHRCMODS_CODE_BASE_DIR="${BASHRCMODS_CODE_BASE_DIR:-$HOME/code}"
 
 # Get the directory where this script is located (BASH_SOURCE[0] in bash, $0 in zsh)
 _ssh_hm_script="${BASH_SOURCE[0]:-$0}"
