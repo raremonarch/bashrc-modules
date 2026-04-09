@@ -184,3 +184,69 @@ function clone-repo () {
         _suggest_git_hooks "$clone_path"
     fi
 }
+
+function git-setup() {
+    local target="${1:-.}"
+    target="${target%/}"
+
+    if [ -d "$target/.git" ]; then
+        echo "Error: '$target' is already a git repository"
+        return 1
+    fi
+
+    local remote_url default_branch
+    if [ -f "$target/.gitremote" ]; then
+        remote_url=$(sed -n '1p' "$target/.gitremote")
+        default_branch=$(sed -n '2p' "$target/.gitremote")
+        if [ -z "$remote_url" ]; then
+            echo "Error: .gitremote file is empty or malformed"
+            return 1
+        fi
+    else
+        echo "No .gitremote file found in '$target'."
+        echo ""
+        local host_alias owner repo_name
+        printf "  Host alias (e.g. raremonarch): "
+        read -r host_alias
+        [ -z "$host_alias" ] && { echo "Error: host alias is required"; return 1; }
+        printf "  Repo owner (e.g. raremonarch): "
+        read -r owner
+        [ -z "$owner" ] && { echo "Error: repo owner is required"; return 1; }
+        local default_repo_name
+        default_repo_name=$(basename "$target")
+        printf "  Repo name [%s]: " "$default_repo_name"
+        read -r repo_name
+        repo_name="${repo_name:-$default_repo_name}"
+        remote_url="git@${host_alias}:${owner}/${repo_name}.git"
+        echo ""
+    fi
+
+    [ -z "$default_branch" ] && default_branch="main"
+
+    local target_label
+    [ "$target" = "." ] && target_label="current directory" || target_label="'$target'"
+    echo "Setting up git repository in $target_label..."
+    echo "  Remote: $remote_url"
+    echo "  Branch: $default_branch"
+
+    if type ssh_load_key_for_url &>/dev/null; then
+        ssh_load_key_for_url "$remote_url" 2>/dev/null
+    fi
+
+    git -C "$target" init || return 1
+    git -C "$target" remote add origin "$remote_url" || return 1
+    git -C "$target" fetch origin || return 1
+    git -C "$target" symbolic-ref HEAD "refs/heads/$default_branch"
+    git -C "$target" update-ref "refs/heads/$default_branch" "refs/remotes/origin/$default_branch"
+    git -C "$target" branch --set-upstream-to="origin/$default_branch" "$default_branch"
+    git -C "$target" reset
+
+    printf "%s\n%s\n" "$remote_url" "$default_branch" > "$target/.gitremote"
+
+    if type _suggest_git_hooks &>/dev/null; then
+        _suggest_git_hooks "$target"
+    fi
+
+    echo ""
+    echo "Done. Run 'git status' to see any uncommitted changes."
+}
