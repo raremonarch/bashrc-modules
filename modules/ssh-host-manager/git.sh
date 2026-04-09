@@ -88,10 +88,31 @@ _suggest_git_hooks() {
         fi
         echo ""
         echo "  ⚙ Git hooks detected ($label)."
-        read -r -p "     Install now? ($cmd) [Y/n] " reply
+        printf "     Install now? (%s) [Y/n] " "$cmd"
+        read -r reply
         reply="${reply:-y}"
         if [[ "$reply" =~ ^[Yy] ]]; then
-            (cd "$repo" && eval "$cmd")
+            local tool="${cmd%% *}"
+            if ! command -v "$tool" &>/dev/null; then
+                echo ""
+                echo "  ✗ '$tool' is not installed — git hooks were not set up."
+                case "$tool" in
+                    pre-commit)
+                        echo "     Install pre-commit:  pipx install pre-commit"
+                        echo "                      or: pip install pre-commit"
+                        ;;
+                    lefthook)
+                        echo "     Install lefthook:    brew install lefthook"
+                        echo "                      or: go install github.com/evilmartians/lefthook@latest"
+                        ;;
+                    *)
+                        echo "     Please install '$tool' and then run: $full_cmd"
+                        ;;
+                esac
+                echo "     Once installed, set up hooks with: $full_cmd"
+            else
+                (cd "$repo" && eval "$cmd")
+            fi
         else
             echo "     Skipped. To install later: $full_cmd"
         fi

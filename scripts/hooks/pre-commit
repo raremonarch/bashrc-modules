@@ -100,8 +100,8 @@ check_module_version_updated() {
         echo "❌ Error: Module file changed but version not updated: $module_file"
         echo "  Current version: $current_version"
         echo ""
-        echo "  1. Update the version in $module_file"
-        echo "  2. Run: ./scripts/update-registry.sh $module_name <new-version>"
+        echo "  Run: ./scripts/update-registry.sh $module_name <new-version>"
+        echo "  (updates both the version in $module_file and registry.json)"
         echo ""
         echo "  To skip: SKIP_MODULES=\"$module_name\" git commit ..."
         exit 1
@@ -159,8 +159,8 @@ check_component_changes() {
             echo "Changed component files:"
             git diff --cached --name-only | grep -E "^${parent_file%/*}/.+\.sh$" | sed 's/^/    /'
             echo ""
-            echo "  1. Update the version in $parent_file"
-            echo "  2. Run: ./scripts/update-registry.sh $module_name <new-version>"
+            echo "  Run: ./scripts/update-registry.sh $module_name <new-version>"
+            echo "  (updates both the version in $parent_file and registry.json)"
             echo ""
             echo "  To skip: SKIP_MODULES=\"$module_name\" git commit ..."
             has_errors=true

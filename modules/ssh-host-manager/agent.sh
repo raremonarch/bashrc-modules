@@ -16,7 +16,7 @@ if [ -f "$HOME/.ssh/ssh-agent.env" ]; then
 fi
 
 # Ensure SSH agent is running (but don't load keys yet)
-if ! [ -n "$SSH_AUTH_SOCK" ] || ! [ -n "$SSH_AGENT_PID" ] || ! kill -0 "$SSH_AGENT_PID" 2>/dev/null; then
+if ! [ -n "$SSH_AUTH_SOCK" ] || ! [ -S "$SSH_AUTH_SOCK" ] || ! [ -n "$SSH_AGENT_PID" ] || ! kill -0 "$SSH_AGENT_PID" 2>/dev/null; then
     # Start SSH agent silently
     eval "$(ssh-agent -s)" > /dev/null 2>&1
     echo "export SSH_AUTH_SOCK=$SSH_AUTH_SOCK" > "$HOME/.ssh/ssh-agent.env"
