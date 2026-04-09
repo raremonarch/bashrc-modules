@@ -53,6 +53,16 @@ ssh_load_key_for_url() {
     ssh-add "$key_file"
 }
 
+# Ensure an entry exists in a repo's .gitignore, appending it if missing.
+_ensure_gitignored() {
+    local repo_dir="$1"
+    local entry="$2"
+    local gitignore="$repo_dir/.gitignore"
+    if ! grep -qxF "$entry" "$gitignore" 2>/dev/null; then
+        echo "$entry" >> "$gitignore"
+    fi
+}
+
 # Check a freshly cloned repo for known hook installation mechanisms and
 # echo the appropriate setup command. Checks in order of specificity.
 _suggest_git_hooks() {
@@ -181,6 +191,7 @@ function clone-repo () {
         local default_branch
         default_branch=$(git -C "$clone_path" symbolic-ref --short HEAD 2>/dev/null || echo "main")
         printf "%s\n%s\n" "$git_url" "$default_branch" > "$clone_path/.gitremote"
+        _ensure_gitignored "$clone_path" ".gitremote"
         _suggest_git_hooks "$clone_path"
     fi
 }
@@ -242,6 +253,7 @@ function git-setup() {
     git -C "$target" reset
 
     printf "%s\n%s\n" "$remote_url" "$default_branch" > "$target/.gitremote"
+    _ensure_gitignored "$target" ".gitremote"
 
     if type _suggest_git_hooks &>/dev/null; then
         _suggest_git_hooks "$target"
