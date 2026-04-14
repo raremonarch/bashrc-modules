@@ -205,5 +205,21 @@
         "variables": []
       }
     }
+  ,
+    {
+      "id": "aws",
+      "description": "AWS CLI helper functions for SSO login and CodeArtifact auth",
+      "version": "0.1.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/aws.sh",
+      "category": "cloud",
+      "exports": {
+        "aliases": [],
+        "functions": [
+          "aws-sso-login",
+          "ca-login"
+        ],
+        "variables": []
+      }
+    }
   ]
 }
