@@ -128,7 +128,7 @@ build_files_array() {
 
 # Get existing categories from registry for display
 get_existing_categories() {
-    jq -r '.modules[].category' registry.json | sort -u
+    jq -r '.modules[].category' registry.json | tr -d '\r' | sort -u
 }
 
 # Prompt user for module metadata and add to registry
