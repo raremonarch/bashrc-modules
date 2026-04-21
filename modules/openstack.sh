@@ -1,6 +1,6 @@
 #!/bin/bash
 # Module: openstack
-# Version: 0.1.0
+# Version: 0.1.1
 # Description: OpenStack cloud management utilities
 # BashMod Dependencies: none
 
@@ -10,9 +10,11 @@ export OS_REGION_NAME=SDCEDN
 osr() {
   case "${1,,}" in
     sdc)
+      export OS_CLOUD=ebsco-novelist-sdc
       export OS_REGION_NAME=SDC
       ;;
     sdcedn|edn)
+      export OS_CLOUD=ebsco-novelist
       export OS_REGION_NAME=SDCEDN
       ;;
     "")
