@@ -204,8 +204,7 @@
         ],
         "variables": []
       }
-    }
-  ,
+    },
     {
       "id": "aws",
       "description": "AWS CLI helper functions for SSO login and CodeArtifact auth",
@@ -219,6 +218,24 @@
           "ca-login"
         ],
         "variables": []
+      }
+    },
+    {
+      "id": "openstack",
+      "description": "OpenStack cloud management utilities",
+      "version": "0.1.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/openstack.sh",
+      "category": "cloud",
+      "exports": {
+        "aliases": [],
+        "functions": [
+          "os",
+          "osr"
+        ],
+        "variables": [
+          "OS_CLOUD",
+          "OS_REGION_NAME"
+        ]
       }
     }
   ]
