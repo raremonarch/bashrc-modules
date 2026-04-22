@@ -237,6 +237,20 @@
           "OS_REGION_NAME"
         ]
       }
+    },
+    {
+      "id": "ls",
+      "description": "ls aliases",
+      "version": "0.1.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ls.sh",
+      "category": "system",
+      "exports": {
+        "aliases": [
+          "ls"
+        ],
+        "functions": [],
+        "variables": []
+      }
     }
   ]
 }
