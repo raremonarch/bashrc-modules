@@ -251,20 +251,6 @@
         "functions": [],
         "variables": []
       }
-    },
-    {
-      "id": "claude",
-      "description": "simply a new data path for claude",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/claude.sh",
-      "category": "system",
-      "exports": {
-        "aliases": [],
-        "functions": [],
-        "variables": [
-          "CLAUDE_CONFIG_DIR"
-        ]
-      }
     }
   ]
 }

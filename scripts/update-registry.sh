@@ -11,10 +11,12 @@ if [ $# -eq 0 ]; then
     echo "Usage:"
     echo "  $0 <module-name> <version>     # Update specific module"
     echo "  $0 --all                        # Update all modules from files to registry"
+    echo "  $0 --delete <module-name>       # Remove a module from registry and filesystem"
     echo ""
     echo "Examples:"
     echo "  $0 ssh-host-manager 0.6.0"
     echo "  $0 --all"
+    echo "  $0 --delete old-module"
     exit 1
 fi
 
@@ -236,7 +238,67 @@ module_in_registry() {
     jq -e --arg name "$module_name" '.modules[] | select(.id == $name)' registry.json > /dev/null 2>&1
 }
 
-if [ "$1" = "--all" ]; then
+delete_module() {
+    local module_name="$1"
+
+    if ! module_in_registry "$module_name"; then
+        echo "Error: Module '$module_name' not found in registry"
+        exit 1
+    fi
+
+    echo "This will remove:"
+    echo "  - Module entry from registry.json"
+    echo "  - File: modules/${module_name}.sh (if exists)"
+    echo "  - Directory: modules/${module_name}/ (if exists)"
+    echo ""
+    read -rp "Are you sure you want to remove '$module_name'? [y/N] " confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        echo "Cancelled."
+        exit 0
+    fi
+
+    jq --arg name "$module_name" '.modules |= map(select(.id != $name))' \
+        registry.json > registry.json.tmp
+    mv registry.json.tmp registry.json
+    echo "  ✓ Removed from registry.json"
+
+    local module_file="modules/${module_name}.sh"
+    if [ -f "$module_file" ]; then
+        if git ls-files --error-unmatch "$module_file" > /dev/null 2>&1; then
+            git rm "$module_file"
+            echo "  ✓ Removed and staged: $module_file"
+        else
+            rm "$module_file"
+            echo "  ✓ Removed: $module_file"
+        fi
+    fi
+
+    local module_dir="modules/${module_name}"
+    if [ -d "$module_dir" ]; then
+        if git ls-files --error-unmatch "$module_dir" > /dev/null 2>&1; then
+            git rm -r "$module_dir"
+            echo "  ✓ Removed and staged: $module_dir/"
+        else
+            rm -rf "$module_dir"
+            echo "  ✓ Removed: $module_dir/"
+        fi
+    fi
+
+    echo ""
+    echo "✓ Module '$module_name' removed successfully!"
+    echo ""
+    echo "Don't forget to stage registry.json:"
+    echo "  git add registry.json"
+}
+
+if [ "$1" = "--delete" ]; then
+    if [ -z "$2" ]; then
+        echo "Error: Module name required"
+        echo "Usage: $0 --delete <module-name>"
+        exit 1
+    fi
+    delete_module "$2"
+elif [ "$1" = "--all" ]; then
     echo "Updating all module versions and exports in registry..."
 
     for module_file in modules/*.sh; do
