@@ -48,12 +48,12 @@
           "git-setup",
           "is_key_loaded",
           "ssh",
-          "ssh_load_git_key",
-          "ssh_load_key_for_url",
           "ssh-host-add",
           "ssh-host-list",
           "ssh-host-remove",
-          "ssh-keys-load"
+          "ssh-keys-load",
+          "ssh_load_git_key",
+          "ssh_load_key_for_url"
         ],
         "variables": [
           "BASHRCMODS_CODE_BASE_DIR",
@@ -250,6 +250,20 @@
         ],
         "functions": [],
         "variables": []
+      }
+    },
+    {
+      "id": "claude",
+      "description": "simply a new data path for claude",
+      "version": "0.1.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/claude.sh",
+      "category": "system",
+      "exports": {
+        "aliases": [],
+        "functions": [],
+        "variables": [
+          "CLAUDE_CONFIG_DIR"
+        ]
       }
     }
   ]
