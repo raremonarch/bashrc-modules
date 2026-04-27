@@ -1,7 +1,7 @@
 #!/bin/bash
-# Module: shell-utils
-# Version: 0.1.0
-# Description: Shell introspection utilities
+# Module: which-aliases
+# Version: 0.2.0
+# Description: List aliases and functions defined across installed shell modules
 # BashMod Dependencies: none
 
 export BASHRCMODS_MODULES_DIR="${BASHRCMODS_MODULES_DIR:-$HOME/.bashrc.d}"

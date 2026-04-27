@@ -1,6 +1,6 @@
 #!/bin/bash
-# Module: openstack
-# Version: 0.1.1
+# Module: openstack-aliases
+# Version: 0.2.0
 # Description: OpenStack cloud management utilities
 # BashMod Dependencies: none
 

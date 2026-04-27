@@ -1,6 +1,6 @@
 #!/bin/bash
-# Module: bak-file
-# Version: 0.1.0
+# Module: bak-anything
+# Version: 0.2.0
 # Description: Backup and restore files with .bak extension
 # BashMod Dependencies: none
 

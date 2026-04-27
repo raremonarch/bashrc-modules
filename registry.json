@@ -9,7 +9,10 @@
       "category": "version-control",
       "exports": {
         "aliases": [
-          "gitaddcommit"
+          {
+            "name": "gitaddcommit",
+            "body": "git add -A . && git commit -m "
+          }
         ],
         "functions": [
           "git-del-branch"
@@ -88,10 +91,10 @@
       ]
     },
     {
-      "id": "shell-utils",
-      "description": "Shell introspection utilities",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/shell-utils.sh",
+      "id": "which-aliases",
+      "description": "List aliases and functions defined across installed shell modules",
+      "version": "0.2.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/which-aliases.sh",
       "category": "system",
       "exports": {
         "aliases": [],
@@ -126,32 +129,41 @@
       "category": "system",
       "exports": {
         "aliases": [
-          "fproc",
-          "psg"
+          {
+            "name": "fproc",
+            "body": "ps aux | grep -i"
+          },
+          {
+            "name": "psg",
+            "body": "ps aux | grep -i"
+          }
         ],
         "functions": [],
         "variables": []
       }
     },
     {
-      "id": "system-reload",
+      "id": "terminal-reload",
       "description": "Shell reload utility",
-      "version": "0.1.1",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/system-reload.sh",
+      "version": "0.2.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/terminal-reload.sh",
       "category": "system",
       "exports": {
         "aliases": [
-          "reload"
+          {
+            "name": "reload",
+            "body": "exec \"$SHELL\" -c \"echo \\\"✓ Shell reloaded\\\" && exec \\\"$SHELL\\\"\""
+          }
         ],
         "functions": [],
         "variables": []
       }
     },
     {
-      "id": "system-usb",
+      "id": "usb-format",
       "description": "USB device formatting utilities",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/system-usb.sh",
+      "version": "0.2.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/usb-format.sh",
       "category": "system",
       "exports": {
         "aliases": [],
@@ -162,10 +174,10 @@
       }
     },
     {
-      "id": "bak-file",
+      "id": "bak-anything",
       "description": "Backup and restore files with .bak extension",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/bak-file.sh",
+      "version": "0.2.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/bak-anything.sh",
       "category": "system",
       "exports": {
         "aliases": [],
@@ -221,10 +233,10 @@
       }
     },
     {
-      "id": "openstack",
+      "id": "openstack-aliases",
       "description": "OpenStack cloud management utilities",
-      "version": "0.1.1",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/openstack.sh",
+      "version": "0.2.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/openstack-aliases.sh",
       "category": "cloud",
       "exports": {
         "aliases": [],
@@ -239,14 +251,17 @@
       }
     },
     {
-      "id": "ls",
-      "description": "ls aliases",
-      "version": "0.1.1",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ls.sh",
+      "id": "ls-lap",
+      "description": "Aliases ls to ls -lap --color",
+      "version": "0.2.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ls-lap.sh",
       "category": "system",
       "exports": {
         "aliases": [
-          "ls"
+          {
+            "name": "ls",
+            "body": "ls -lap --color"
+          }
         ],
         "functions": [],
         "variables": []

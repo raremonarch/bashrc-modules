@@ -27,14 +27,17 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
-# Extract exports from a single file (internal helper)
-extract_exports_from_file() {
+# Extract alias name+body pairs from a single file
+# Outputs tab-separated lines: name<TAB>body (outer quotes stripped from body)
+extract_alias_objects_from_file() {
     local file="$1"
-
-    # Extract alias names (handles: alias name='...' or alias name="...")
-    grep -E '^alias [a-zA-Z_][a-zA-Z0-9_-]*=' "$file" 2>/dev/null | sed -E "s/^alias ([a-zA-Z_][a-zA-Z0-9_-]*)=.*/\1/"
-
-    # Note: functions and variables are extracted separately
+    grep -E '^alias [a-zA-Z_][a-zA-Z0-9_-]*=' "$file" 2>/dev/null | while IFS= read -r line; do
+        local name body
+        name=$(printf '%s' "$line" | sed -E 's/^alias ([a-zA-Z_][a-zA-Z0-9_-]*)=.*/\1/')
+        body=$(printf '%s' "$line" | sed -E 's/^alias [a-zA-Z_][a-zA-Z0-9_-]*=(.*)/\1/')
+        body=$(printf '%s' "$body" | sed "s/^'\(.*\)'$/\1/;s/^\"\(.*\)\"$/\1/")
+        printf '%s\t%s\n' "$name" "$body"
+    done
 }
 
 extract_functions_from_file() {
@@ -67,27 +70,34 @@ extract_exports() {
         done
     fi
 
-    # Extract from all files and combine
-    local aliases="" functions="" variables=""
+    # Build alias objects array: {name, body}, dedup by name, sorted
+    declare -A _alias_bodies
     for file in "${files_to_parse[@]}"; do
-        aliases+=$(extract_exports_from_file "$file")$'\n'
+        while IFS=$'\t' read -r name body; do
+            [ -z "$name" ] && continue
+            [[ "$name" == _* ]] && continue
+            [ -z "${_alias_bodies[$name]+x}" ] && _alias_bodies[$name]="$body"
+        done < <(extract_alias_objects_from_file "$file")
+    done
+
+    local aliases_json="[]"
+    for name in $(printf '%s\n' "${!_alias_bodies[@]}" | sort); do
+        aliases_json=$(printf '%s' "$aliases_json" | jq --arg n "$name" --arg b "${_alias_bodies[$name]}" \
+            '. += [{name: $n, body: $b}]')
+    done
+    unset _alias_bodies
+
+    # Extract functions and variables
+    local functions="" variables=""
+    for file in "${files_to_parse[@]}"; do
         functions+=$(extract_functions_from_file "$file")$'\n'
         variables+=$(extract_variables_from_file "$file")$'\n'
     done
 
-    # Remove empty lines, filter out internal helpers (starting with _), and sort
-    aliases=$(echo "$aliases" | grep -v '^$' | grep -v '^_' | sort -u)
     functions=$(echo "$functions" | grep -v '^$' | grep -v '^_' | sort -u)
     variables=$(echo "$variables" | grep -v '^$' | sort -u)
 
-    # Convert to JSON arrays
-    local aliases_json functions_json variables_json
-    if [ -n "$aliases" ]; then
-        aliases_json=$(echo "$aliases" | jq -R . | jq -s .)
-    else
-        aliases_json="[]"
-    fi
-
+    local functions_json variables_json
     if [ -n "$functions" ]; then
         functions_json=$(echo "$functions" | jq -R . | jq -s .)
     else
@@ -100,8 +110,8 @@ extract_exports() {
         variables_json="[]"
     fi
 
-    # Return as JSON object
-    jq -n --argjson aliases "$aliases_json" --argjson functions "$functions_json" --argjson variables "$variables_json" \
+    jq -n --argjson aliases "$aliases_json" --argjson functions "$functions_json" \
+        --argjson variables "$variables_json" \
         '{aliases: $aliases, functions: $functions, variables: $variables}'
 }
 

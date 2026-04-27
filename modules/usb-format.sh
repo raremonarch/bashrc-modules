@@ -1,6 +1,6 @@
 #!/bin/bash
-# Module: system-usb
-# Version: 0.1.0
+# Module: usb-format
+# Version: 0.2.0
 # Description: USB device formatting utilities
 # BashMod Dependencies: none
 

@@ -1,6 +1,6 @@
 #!/bin/bash
-# Module: system-reload
-# Version: 0.1.1
+# Module: terminal-reload
+# Version: 0.2.0
 # Description: Shell reload utility
 # BashMod Dependencies: none
 
