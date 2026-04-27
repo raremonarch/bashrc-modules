@@ -251,6 +251,15 @@ function git-setup() {
     git -C "$target" update-ref "refs/heads/$default_branch" "refs/remotes/origin/$default_branch"
     git -C "$target" branch --set-upstream-to="origin/$default_branch" "$default_branch"
     git -C "$target" reset
+    local stashed=false
+    if ! git -C "$target" diff --quiet; then
+        git -C "$target" stash push -m "git-setup: preserve local changes"
+        stashed=true
+    fi
+    git -C "$target" reset --hard
+    if $stashed; then
+        git -C "$target" stash pop
+    fi
 
     printf "%s\n%s\n" "$remote_url" "$default_branch" > "$target/.gitremote"
     _ensure_gitignored "$target" ".gitremote"
