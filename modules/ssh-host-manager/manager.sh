@@ -262,39 +262,39 @@ _generate_ssh_key() {
     local key_path="$HOME/.ssh/${key_name}"
 
     if [ -f "$key_path" ]; then
-        echo "Key already exists at: $key_path"
+        echo "Key already exists at: $key_path" >&2
         read -p "Use existing key? [Y/n] " -n 1 -r
-        echo
+        echo >&2
         if [[ ! $REPLY =~ ^[Yy]$ ]] && [[ ! -z $REPLY ]]; then
             return 1
         fi
     else
-        echo "Generating new SSH key: $key_path"
+        echo "Generating new SSH key: $key_path" >&2
         ssh-keygen -t "$key_type" -f "$key_path" -C "${user}@${hostname} (${host_alias})"
 
         if [ $? -ne 0 ]; then
-            echo "Error: Failed to generate SSH key"
+            echo "Error: Failed to generate SSH key" >&2
             return 1
         fi
 
-        echo ""
-        echo "=== Public Key ==="
-        cat "${key_path}.pub"
-        echo "=================="
-        echo ""
+        echo "" >&2
+        echo "=== Public Key ===" >&2
+        cat "${key_path}.pub" >&2
+        echo "==================" >&2
+        echo "" >&2
 
         if [ "$host_type" = "git" ]; then
-            echo "Add this public key to your ${hostname} account"
+            echo "Add this public key to your ${hostname} account" >&2
         else
-            echo "Public key generated for ${hostname}"
-            echo ""
+            echo "Public key generated for ${hostname}" >&2
+            echo "" >&2
             read -p "Copy public key to remote host? [y/N] " -n 1 -r
-            echo
+            echo >&2
             if [[ $REPLY =~ ^[Yy]$ ]]; then
-                _copy_ssh_key "$key_path" "$user" "$hostname" "$port" || return 1
+                _copy_ssh_key "$key_path" "$user" "$hostname" "$port" >&2 || return 1
             fi
-            echo ""
-            echo "Note: Once the SSH config is saved, connect with: ssh ${host_alias}"
+            echo "" >&2
+            echo "Note: Once the SSH config is saved, connect with: ssh ${host_alias}" >&2
         fi
     fi
 
