@@ -88,14 +88,14 @@ _show_help() {
 # Helper function to find matching SSH key for org
 _find_matching_key() {
     local org="$1"
-    local matching_key=""
+    local matching_key="" privkey="" keyname="" keyname_lower=""
+    local org_lower
+    org_lower=$(echo "$org" | tr '[:upper:]' '[:lower:]')
 
     while IFS= read -r pubkey; do
-        local privkey="${pubkey%.pub}"
-        local keyname=$(basename "$privkey")
-        local keyname_lower org_lower
+        privkey="${pubkey%.pub}"
+        keyname=$(basename "$privkey")
         keyname_lower=$(echo "$keyname" | tr '[:upper:]' '[:lower:]')
-        org_lower=$(echo "$org" | tr '[:upper:]' '[:lower:]')
         if [ -f "$privkey" ] && [[ "$keyname" =~ (^|[_-])${org}([_-]|$) ]] || [[ "$keyname_lower" == *"$org_lower"* ]]; then
             matching_key="$privkey"
             break
