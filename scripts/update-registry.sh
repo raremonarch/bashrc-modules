@@ -27,6 +27,35 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
+# Resolve a version argument into a concrete semver string.
+# Usage: _resolve_semver <version-or-keyword> <current-version>
+# Accepts: "patch", "minor", "major" (bumps current), or a literal "X.Y.Z".
+# Prints the resolved version to stdout; returns 1 on error.
+_resolve_semver() {
+    local input="$1" current="$2"
+    case "$input" in
+        patch|minor|major)
+            if [[ ! "$current" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+                echo "Error: Cannot bump '$input' — current version '${current:-<none>}' is not valid semver" >&2
+                return 1
+            fi
+            local v_maj="${BASH_REMATCH[1]}" v_min="${BASH_REMATCH[2]}" v_pat="${BASH_REMATCH[3]}"
+            case "$input" in
+                major) echo "$((v_maj + 1)).0.0" ;;
+                minor) echo "${v_maj}.$((v_min + 1)).0" ;;
+                patch) echo "${v_maj}.${v_min}.$((v_pat + 1))" ;;
+            esac
+            ;;
+        *)
+            if [[ ! "$input" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo "Error: '$input' is not valid. Use semver (e.g. 1.2.3) or a bump keyword (patch, minor, major)." >&2
+                return 1
+            fi
+            echo "$input"
+            ;;
+    esac
+}
+
 # Extract alias name+body pairs from a single file
 # Outputs tab-separated lines: name<TAB>body (outer quotes stripped from body)
 extract_alias_objects_from_file() {
@@ -371,6 +400,8 @@ else
 
     # Update version in the module file header
     current_version=$(grep -E '^# Version:' "$module_file" | head -1 | sed -E 's/^# Version: //')
+    version=$(_resolve_semver "$version" "$current_version") || exit 1
+
     if [ -n "$current_version" ] && [ "$current_version" != "$version" ]; then
         sed -i "s/^# Version: ${current_version}$/# Version: ${version}/" "$module_file"
         echo "✓ Updated module file: $module_name $current_version → $version"
