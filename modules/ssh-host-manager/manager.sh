@@ -280,7 +280,7 @@ _generate_ssh_key() {
         fi
     else
         echo "Generating new SSH key: $key_path" >&2
-        ssh-keygen -t "$key_type" -f "$key_path" -C "${user}@${hostname} (${host_alias})"
+        ssh-keygen -t "$key_type" -f "$key_path" -C "${user}@${hostname} (${host_alias})" >&2
 
         if [ $? -ne 0 ]; then
             echo "Error: Failed to generate SSH key" >&2
