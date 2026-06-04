@@ -1,6 +1,6 @@
 #!/bin/bash
 # Module: ssh-host-manager
-# Version: 0.7.6
+# Version: patch
 # Description: Comprehensive SSH and Git host management suite
 # BashMod Dependencies: none
 

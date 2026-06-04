@@ -9,6 +9,16 @@ BASHRCMODS_SSH_CLONE_DIR_BASE="${BASHRCMODS_SSH_CLONE_DIR_BASE:-${BASHRCMODS_COD
 # SSH config file location
 SSH_CONFIG="${SSH_CONFIG:-$HOME/.ssh/config}"
 
+# Cross-shell helper: print a prompt and read one character into $REPLY
+_bashrcmods_read_char() {
+    printf '%s' "$1"
+    if [[ -n "$ZSH_VERSION" ]]; then
+        read -k1 REPLY
+    else
+        IFS= read -rn1 REPLY
+    fi
+}
+
 # Ensure SSH directory and config exist
 mkdir -p "$HOME/.ssh"
 touch "$SSH_CONFIG"
@@ -126,7 +136,7 @@ _select_ssh_key() {
             echo "  [2] Choose another existing key"
             echo "  [3] Generate a new key"
             echo ""
-            read -p "Select option [1]: " key_option
+            printf "Select option [1]: "; IFS= read -r key_option
             key_option="${key_option:-1}"
 
             case "$key_option" in
@@ -139,7 +149,7 @@ _select_ssh_key() {
                     _list_ssh_keys
                     local keys=("${_SSH_KEYS[@]}")
                     echo ""
-                    read -p "Select key [1-${#keys[@]}] or enter custom path: " key_choice
+                    printf "Select key [1-%s] or enter custom path: " "${#keys[@]}"; IFS= read -r key_choice
                     if [[ "$key_choice" =~ ^[0-9]+$ ]] && [ "$key_choice" -ge 1 ] && [ "$key_choice" -le ${#keys[@]} ]; then
                         key_path="${keys[$((key_choice-1))]}"
                     else
@@ -148,7 +158,7 @@ _select_ssh_key() {
                     ;;
                 3)
                     generate_key=true
-                    read -p "Key type [ed25519]: " key_type
+                    printf "Key type [ed25519]: "; IFS= read -r key_type
                     key_type="${key_type:-ed25519}"
                     ;;
                 *)
@@ -168,16 +178,16 @@ _select_ssh_key() {
         echo "  [$gen_option] Generate a new key"
 
         if [ ${#keys[@]} -eq 0 ]; then
-            read -p "Select option [$gen_option]: " key_choice
+            printf "Select option [%s]: " "$gen_option"; IFS= read -r key_choice
             key_choice="${key_choice:-$gen_option}"
         else
-            read -p "Select key [1-$gen_option] or enter custom path: " key_choice
+            printf "Select key [1-%s] or enter custom path: " "$gen_option"; IFS= read -r key_choice
         fi
 
         if [[ "$key_choice" =~ ^[0-9]+$ ]]; then
             if [ "$key_choice" -eq "$gen_option" ]; then
                 generate_key=true
-                read -p "Key type [ed25519]: " key_type
+                printf "Key type [ed25519]: "; IFS= read -r key_type
                 key_type="${key_type:-ed25519}"
             elif [ "$key_choice" -ge 1 ] && [ "$key_choice" -le ${#keys[@]} ]; then
                 key_path="${keys[$((key_choice-1))]}"
@@ -215,7 +225,7 @@ _copy_ssh_key() {
         echo "Error: Failed to copy public key to remote host"
         echo "       You can manually copy it later with:"
         echo "       ssh-copy-id -i ${key_path}.pub ${user}@${hostname}"
-        read -p "Continue anyway? [y/N] " -n 1 -r
+        _bashrcmods_read_char "Continue anyway? [y/N] "
         echo
         [[ $REPLY =~ ^[Yy]$ ]]
     else
@@ -263,7 +273,7 @@ _generate_ssh_key() {
 
     if [ -f "$key_path" ]; then
         echo "Key already exists at: $key_path" >&2
-        read -p "Use existing key? [Y/n] " -n 1 -r
+        _bashrcmods_read_char "Use existing key? [Y/n] "
         echo >&2
         if [[ ! $REPLY =~ ^[Yy]$ ]] && [[ ! -z $REPLY ]]; then
             return 1
@@ -288,7 +298,7 @@ _generate_ssh_key() {
         else
             echo "Public key generated for ${hostname}" >&2
             echo "" >&2
-            read -p "Copy public key to remote host? [y/N] " -n 1 -r
+            _bashrcmods_read_char "Copy public key to remote host? [y/N] "
             echo >&2
             if [[ $REPLY =~ ^[Yy]$ ]]; then
                 _copy_ssh_key "$key_path" "$user" "$hostname" "$port" >&2 || return 1
@@ -401,7 +411,7 @@ ssh-host-add() {
 
         # For Git hosts, ask for org first to use as default alias
         echo ""
-        read -p "Git organization/username: " org
+        printf "Git organization/username: "; IFS= read -r org
         if [ -z "$org" ]; then
             echo "Error: Organization is required for Git hosts"
             return 1
@@ -413,7 +423,7 @@ ssh-host-add() {
         elif [ "$BASHRCMODS_SSH_AUTO_ALIAS" = "true" ]; then
             host_alias="$org"
         else
-            read -p "Host alias [$org]: " host_alias
+            printf "Host alias [%s]: " "$org"; IFS= read -r host_alias
             host_alias="${host_alias:-$org}"
         fi
 
@@ -426,7 +436,7 @@ ssh-host-add() {
         else
             local default_clone_dir="${BASHRCMODS_SSH_CLONE_DIR_BASE}/$org"
             default_clone_dir="${default_clone_dir/#$HOME/\~}"
-            read -p "Clone directory [$default_clone_dir]: " clone_dir
+            printf "Clone directory [%s]: " "$default_clone_dir"; IFS= read -r clone_dir
             clone_dir="${clone_dir:-$default_clone_dir}"
         fi
     else
@@ -434,26 +444,26 @@ ssh-host-add() {
         if [ -n "$alias_override" ]; then
             host_alias="$alias_override"
         else
-            read -p "Host alias (short name for 'ssh <alias>'): " host_alias
+            printf "Host alias (short name for 'ssh <alias>'): "; IFS= read -r host_alias
             if [ -z "$host_alias" ]; then
                 echo "Error: Host alias is required"
                 return 1
             fi
         fi
 
-        read -p "Is this for Git repositories? [y/N] " -n 1 -r
+        _bashrcmods_read_char "Is this for Git repositories? [y/N] "
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             host_type="git"
             user="git"
             echo ""
-            read -p "Git organization/username: " org
+            printf "Git organization/username: "; IFS= read -r org
             if [ -z "$org" ]; then
                 echo "Error: Organization is required for Git hosts"
                 return 1
             fi
 
-            read -p "Clone directory (e.g., ~/code/work): " clone_dir
+            printf "Clone directory (e.g., ~/code/work): "; IFS= read -r clone_dir
             if [ -z "$clone_dir" ]; then
                 echo "Error: Clone directory is required for Git hosts"
                 return 1
@@ -464,7 +474,7 @@ ssh-host-add() {
     # Check if host already exists
     if grep -q "^Host $host_alias$" "$SSH_CONFIG" 2>/dev/null; then
         echo "Warning: Host alias '$host_alias' already exists in SSH config"
-        read -p "Overwrite? [y/N] " -n 1 -r
+        _bashrcmods_read_char "Overwrite? [y/N] "
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             return 1
@@ -478,7 +488,7 @@ ssh-host-add() {
         if [ -n "$user_override" ]; then
             user="$user_override"
         else
-            read -p "SSH username: " user
+            printf "SSH username: "; IFS= read -r user
             if [ -z "$user" ]; then
                 echo "Error: Username is required"
                 return 1
@@ -489,7 +499,7 @@ ssh-host-add() {
         if [ -n "$port_override" ]; then
             port="$port_override"
         else
-            read -p "SSH port [22]: " port
+            printf "SSH port [22]: "; IFS= read -r port
             port="${port:-22}"
         fi
     fi
@@ -504,7 +514,7 @@ ssh-host-add() {
 
     # Ask about copying key (SSH hosts only)
     if [ "$host_type" = "ssh" ] && [ "$generate_key" = false ]; then
-        read -p "Copy public key to remote host? [y/N] " -n 1 -r
+        _bashrcmods_read_char "Copy public key to remote host? [y/N] "
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             copy_key=true
@@ -532,7 +542,7 @@ ssh-host-add() {
     fi
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    read -p "Proceed with this configuration? [Y/n] " -n 1 -r
+    _bashrcmods_read_char "Proceed with this configuration? [Y/n] "
     echo
     if [[ $REPLY =~ ^[Nn]$ ]]; then
         echo "Cancelled."
@@ -630,7 +640,7 @@ ssh-host-remove() {
     # Check if managed by ssh-host-manager
     if ! _ssh_host_is_managed "$host_alias"; then
         echo "Warning: Host '$host_alias' is not managed by ssh-host-manager"
-        read -p "Remove anyway? [y/N] " -n 1 -r
+        _bashrcmods_read_char "Remove anyway? [y/N] "
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             return 1
