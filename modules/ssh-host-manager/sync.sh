@@ -1,21 +1,33 @@
 #!/bin/bash
-# Syncthing git repository restoration
+# CD hook: offer to initialize synced repos that are missing .git
 
-# Nudge the user to run git-setup when entering a directory that has a
-# .gitremote but no .git folder. On by default; set BASHRCMODS_GIT_SYNC_AUTO_NUDGE=0
-# to disable.
-_git_sync_nudge() {
-    [ "${BASHRCMODS_GIT_SYNC_AUTO_NUDGE:-1}" = "0" ] && return
-    [ -f ".gitremote" ] && [ ! -d ".git" ] || return
-    echo "  ⚠ No .git here — run 'git-setup' to initialize this synced repo."
+_git_sync_auto_setup() {
+    [ "${BASHRCMODS_GIT_SYNC_AUTO_SETUP:-1}" = "0" ] && return
+    [ -d ".git" ] && return
+
+    local remote_url
+    remote_url=$(_derive_remote_from_path "." 2>/dev/null) || return
+
+    printf "\n  ⚠ No .git here — initialize from %s? [Y/n] " "$remote_url"
+    local reply
+    read -r reply
+    reply="${reply:-y}"
+    echo ""
+    [[ "$reply" =~ ^[Yy] ]] && git-setup
 }
 
-# Register the nudge with the shell's directory-change hook
 if [ -n "$ZSH_VERSION" ]; then
     autoload -Uz add-zsh-hook
-    add-zsh-hook chpwd _git_sync_nudge
+    add-zsh-hook chpwd _git_sync_auto_setup
 elif [ -n "$BASH_VERSION" ]; then
-    if [[ "$PROMPT_COMMAND" != *"_git_sync_nudge"* ]]; then
-        PROMPT_COMMAND="_git_sync_nudge${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
+    _git_sync_last_dir=""
+    _git_sync_check_dir() {
+        if [ "$PWD" != "$_git_sync_last_dir" ]; then
+            _git_sync_last_dir="$PWD"
+            _git_sync_auto_setup
+        fi
+    }
+    if [[ "$PROMPT_COMMAND" != *"_git_sync_check_dir"* ]]; then
+        PROMPT_COMMAND="_git_sync_check_dir${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
     fi
 fi

@@ -53,6 +53,23 @@ ssh_load_key_for_url() {
     ssh-add "$key_file"
 }
 
+# Strip ANSI/VT escape sequences (e.g. arrow-key codes like ^[[C) from a string.
+_strip_escapes() {
+    printf '%s' "$1" | sed $'s/\033\\[[0-9;]*[A-Za-z]//g; s/\033//g'
+}
+
+# Derive a git remote URL from the directory path convention ~/code/{org}/{repo}.
+# Returns git@{org}:{org}/{repo}.git if {org} is a known SSH host alias, else fails.
+_derive_remote_from_path() {
+    local target="$1"
+    local abs_path org repo_name
+    abs_path=$(cd "$target" && pwd)
+    repo_name=$(basename "$abs_path")
+    org=$(basename "$(dirname "$abs_path")")
+    grep -q "^Host ${org}$" "$HOME/.ssh/config" 2>/dev/null || return 1
+    echo "git@${org}:${org}/${repo_name}.git"
+}
+
 # Ensure an entry exists in a repo's .gitignore, appending it if missing.
 _ensure_gitignored() {
     local repo_dir="$1"
@@ -188,10 +205,6 @@ function clone-repo () {
     echo "  Path: $clone_path"
 
     if ssh_load_key_for_url "$git_url" && command git clone "$git_url" "$clone_path"; then
-        local default_branch
-        default_branch=$(git -C "$clone_path" symbolic-ref --short HEAD 2>/dev/null || echo "main")
-        printf "%s\n%s\n" "$git_url" "$default_branch" > "$clone_path/.gitremote"
-        _ensure_gitignored "$clone_path" ".gitremote"
         _suggest_git_hooks "$clone_path"
     fi
 }
@@ -206,39 +219,34 @@ function git-setup() {
     fi
 
     local remote_url default_branch
-    if [ -f "$target/.gitremote" ]; then
-        remote_url=$(sed -n '1p' "$target/.gitremote")
-        default_branch=$(sed -n '2p' "$target/.gitremote")
-        if [ -z "$remote_url" ]; then
-            echo "Error: .gitremote file is empty or malformed"
-            return 1
-        fi
-    else
-        echo "No .gitremote file found in '$target'."
+
+    remote_url=$(_derive_remote_from_path "$target")
+    if [ -z "$remote_url" ]; then
+        echo "Could not derive remote from path — please enter details manually."
         echo ""
         local host_alias owner repo_name
         printf "  Host alias (e.g. raremonarch): "
         read -r host_alias
+        host_alias=$(_strip_escapes "$host_alias")
         [ -z "$host_alias" ] && { echo "Error: host alias is required"; return 1; }
         printf "  Repo owner (e.g. raremonarch): "
         read -r owner
+        owner=$(_strip_escapes "$owner")
         [ -z "$owner" ] && { echo "Error: repo owner is required"; return 1; }
         local default_repo_name
-        default_repo_name=$(basename "$target")
+        default_repo_name=$(cd "$target" && basename "$(pwd)")
         printf "  Repo name [%s]: " "$default_repo_name"
         read -r repo_name
+        repo_name=$(_strip_escapes "$repo_name")
         repo_name="${repo_name:-$default_repo_name}"
         remote_url="git@${host_alias}:${owner}/${repo_name}.git"
         echo ""
     fi
 
-    [ -z "$default_branch" ] && default_branch="main"
-
     local target_label
     [ "$target" = "." ] && target_label="current directory" || target_label="'$target'"
     echo "Setting up git repository in $target_label..."
     echo "  Remote: $remote_url"
-    echo "  Branch: $default_branch"
 
     if type ssh_load_key_for_url &>/dev/null; then
         ssh_load_key_for_url "$remote_url" 2>/dev/null
@@ -247,12 +255,17 @@ function git-setup() {
     git -C "$target" init || return 1
     git -C "$target" remote add origin "$remote_url" || return 1
     git -C "$target" fetch origin || return 1
+
+    default_branch=$(git -C "$target" ls-remote --symref origin HEAD 2>/dev/null | sed -n 's|^ref: refs/heads/\(.*\)\tHEAD$|\1|p')
+    [ -z "$default_branch" ] && default_branch="main"
+    echo "  Branch: $default_branch"
+
     git -C "$target" symbolic-ref HEAD "refs/heads/$default_branch"
     git -C "$target" update-ref "refs/heads/$default_branch" "refs/remotes/origin/$default_branch"
     git -C "$target" branch --set-upstream-to="origin/$default_branch" "$default_branch"
     git -C "$target" reset
     local stashed=false
-    if ! git -C "$target" diff --quiet; then
+    if ! git -C "$target" diff --ignore-cr-at-eol --quiet; then
         git -C "$target" stash push -m "git-setup: preserve local changes"
         stashed=true
     fi
@@ -260,9 +273,6 @@ function git-setup() {
     if $stashed; then
         git -C "$target" stash pop
     fi
-
-    printf "%s\n%s\n" "$remote_url" "$default_branch" > "$target/.gitremote"
-    _ensure_gitignored "$target" ".gitremote"
 
     if type _suggest_git_hooks &>/dev/null; then
         _suggest_git_hooks "$target"
