@@ -266,6 +266,22 @@
         "functions": [],
         "variables": []
       }
+    },
+    {
+      "id": "rand-string",
+      "description": "Random string generators for alphabet, numeric, and alphanumeric output",
+      "version": "0.1.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/rand-string.sh",
+      "category": "security",
+      "exports": {
+        "aliases": [],
+        "functions": [
+          "rand_alphabet",
+          "rand_alphanumeric",
+          "rand_number"
+        ],
+        "variables": []
+      }
     }
   ]
 }
