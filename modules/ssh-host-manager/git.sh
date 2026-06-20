@@ -63,7 +63,7 @@ _strip_escapes() {
 _derive_remote_from_path() {
     local target="$1"
     local abs_path org repo_name
-    abs_path=$(cd "$target" && pwd)
+    abs_path=$(realpath -- "$target")
     repo_name=$(basename "$abs_path")
     org=$(basename "$(dirname "$abs_path")")
     grep -q "^Host ${org}$" "$HOME/.ssh/config" 2>/dev/null || return 1
@@ -245,8 +245,13 @@ function git-setup() {
     target="${target%/}"
 
     if [ -d "$target/.git" ]; then
-        echo "Error: '$target' is already a git repository"
-        return 1
+        local existing_remote existing_branch
+        existing_remote=$(git -C "$target" remote get-url origin 2>/dev/null || echo "(no remote)")
+        existing_branch=$(git -C "$target" symbolic-ref --short HEAD 2>/dev/null || echo "(detached)")
+        echo "Already a git repository — nothing to do."
+        echo "  Remote: $existing_remote"
+        echo "  Branch: $existing_branch"
+        return 0
     fi
 
     local remote_url default_branch
