@@ -207,13 +207,16 @@ _check_code_stignore() {
 if [ -n "$ZSH_VERSION" ]; then
     autoload -Uz add-zsh-hook 2>/dev/null
     add-zsh-hook chpwd _check_code_stignore
+    # One-shot precmd for startup (avoids p10k instant prompt warnings)
+    _stignore_startup() {
+        _check_code_stignore
+        add-zsh-hook -d precmd _stignore_startup
+    }
+    add-zsh-hook precmd _stignore_startup
 else
     [[ "$PROMPT_COMMAND" != *"_check_code_stignore"* ]] &&
         PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }_check_code_stignore"
 fi
-
-# Run once at shell startup to catch terminals opened inside ~/code
-_check_code_stignore
 
 function clone-repo () {
     if [ -z "$1" ] || [ -z "$2" ]; then

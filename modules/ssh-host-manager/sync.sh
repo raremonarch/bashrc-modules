@@ -80,6 +80,13 @@ _git_sync_check() {
 if [ -n "$ZSH_VERSION" ]; then
     autoload -Uz add-zsh-hook
     add-zsh-hook chpwd _git_sync_check
+    # One-shot precmd for the startup case (terminals opened inside a repo dir).
+    # Using precmd rather than a direct call avoids p10k instant prompt warnings.
+    _git_sync_startup() {
+        _git_sync_check
+        add-zsh-hook -d precmd _git_sync_startup
+    }
+    add-zsh-hook precmd _git_sync_startup
 elif [ -n "$BASH_VERSION" ]; then
     _git_sync_last_dir=""
     _git_sync_check_dir() {
@@ -89,9 +96,8 @@ elif [ -n "$BASH_VERSION" ]; then
         fi
     }
     if [[ "$PROMPT_COMMAND" != *"_git_sync_check_dir"* ]]; then
+        # Prepend so it runs before the prompt is drawn.
+        # On first prompt _git_sync_last_dir is empty so the startup case is covered.
         PROMPT_COMMAND="_git_sync_check_dir${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
     fi
 fi
-
-# Run once at shell startup to catch terminals opened directly inside a repo dir
-_git_sync_check
