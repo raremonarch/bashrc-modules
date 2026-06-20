@@ -1,57 +1,8 @@
 #!/bin/bash
-# SSH key management for Git operations
+# Git utilities: repo setup, cloning, hook installation, stignore check
 
-# Function to load SSH key based on a git URL (before cloning)
-ssh_load_key_for_url() {
-    local git_url="$1"
-    local ssh_host
-    local key_file
-
-    if [ -z "$git_url" ]; then
-        echo "No Git URL provided"
-        return 1
-    fi
-
-    # Extract SSH host from git URL
-    case "$git_url" in
-        git@*:*)
-            # Extract the SSH host from git@host:repo format
-            ssh_host=$(echo "$git_url" | sed -E 's|^git@([^:]+):.*|\1|')
-            ;;
-        ssh://git@*)
-            # Extract from ssh://git@host/repo format
-            ssh_host=$(echo "$git_url" | sed -E 's|^ssh://git@([^:/]+).*|\1|')
-            ;;
-        *)
-            echo "Not an SSH Git URL: $git_url"
-            return 1
-            ;;
-    esac
-
-    # Check if get_ssh_key_for_host is available from ssh-agent.sh
-    if ! type get_ssh_key_for_host &>/dev/null; then
-        echo "Error: get_ssh_key_for_host function not found"
-        echo "Please ensure ssh-agent.sh is loaded"
-        return 1
-    fi
-
-    # Use the shared function from ssh-agent.sh
-    key_file=$(get_ssh_key_for_host "$ssh_host")
-
-    if [ -z "$key_file" ]; then
-        echo "Could not find SSH key for host: $ssh_host"
-        return 1
-    fi
-
-    # Check if the key is already loaded
-    if is_key_loaded "$key_file"; then
-        return 0
-    fi
-
-    # Load the specific key
-    echo "Loading SSH key for $ssh_host: $(basename "$key_file")"
-    ssh-add "$key_file"
-}
+# Write to /dev/tty directly so hook-fired messages aren't captured by p10k instant prompt.
+_git_tty() { printf '%s\n' "$*" >/dev/tty 2>/dev/null || printf '%s\n' "$*" >&2; }
 
 # Strip ANSI/VT escape sequences (e.g. arrow-key codes like ^[[C) from a string.
 _strip_escapes() {
@@ -195,19 +146,18 @@ _check_code_stignore() {
 
     local stignore="$code_dir/.stignore"
     if [ ! -f "$stignore" ]; then
-        echo "[ssh-host-manager] warning: no .stignore in $code_dir — Syncthing may be syncing .git directories" >&2
+        _git_tty "[git-sync] warning: no .stignore in $code_dir — Syncthing may be syncing .git directories"
         return
     fi
     # Accept: .git  .git/  **/.git  **/.git/
     if ! grep -qE '^(\*\*/)?\.git/?$' "$stignore"; then
-        echo "[ssh-host-manager] warning: $stignore does not exclude .git directories" >&2
+        _git_tty "[git-sync] warning: $stignore does not exclude .git directories"
     fi
 }
 
 if [ -n "$ZSH_VERSION" ]; then
     autoload -Uz add-zsh-hook 2>/dev/null
     add-zsh-hook chpwd _check_code_stignore
-    # One-shot precmd for startup (avoids p10k instant prompt warnings)
     _stignore_startup() {
         _check_code_stignore
         add-zsh-hook -d precmd _stignore_startup
@@ -218,7 +168,7 @@ else
         PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }_check_code_stignore"
 fi
 
-function clone-repo () {
+function clone-repo() {
     if [ -z "$1" ] || [ -z "$2" ]; then
         echo "Usage: clone-repo <owner> <repo-name>"
         echo "Examples:"
@@ -234,21 +184,18 @@ function clone-repo () {
 
     local owner="$1"
     local repo_name="$2"
-    local ssh_host=$(echo "$owner" | tr '[:upper:]' '[:lower:]')
+    local ssh_host
+    ssh_host=$(echo "$owner" | tr '[:upper:]' '[:lower:]')
 
-    # Check if there's a configured SSH host for this owner with a clone_dir
     local clone_dir=""
     local has_ssh_host=false
     if grep -q "^Host $ssh_host$" "$HOME/.ssh/config" 2>/dev/null; then
         has_ssh_host=true
-        # Look for clone_dir in the managed comment above this host
-        local in_block=false
         while IFS= read -r line; do
             if [[ "$line" =~ ^#\ Managed\ by\ ssh-host-manager.*org=${ssh_host} ]]; then
-                # Extract clone_dir from comment
                 if [[ "$line" =~ clone_dir=([^\)]+) ]]; then
                     clone_dir="${BASH_REMATCH[1]}"
-                    clone_dir="${clone_dir/#\~/$HOME}"  # Expand tilde
+                    clone_dir="${clone_dir/#\~/$HOME}"
                 fi
             elif [[ "$line" =~ ^Host\ $ssh_host$ ]]; then
                 break
@@ -256,7 +203,6 @@ function clone-repo () {
         done < "$HOME/.ssh/config"
     fi
 
-    # Use SSH host alias if configured, otherwise use github.com
     local git_url
     if [ "$has_ssh_host" = true ]; then
         git_url="git@${ssh_host}:${owner}/${repo_name}.git"
@@ -264,7 +210,6 @@ function clone-repo () {
         git_url="git@github.com:${owner}/${repo_name}.git"
     fi
 
-    # Determine clone path
     local clone_path
     if [ -n "$clone_dir" ]; then
         clone_path="${clone_dir}/${repo_name}"
@@ -276,7 +221,10 @@ function clone-repo () {
     echo "  URL: $git_url"
     echo "  Path: $clone_path"
 
-    if ssh_load_key_for_url "$git_url" && command git clone "$git_url" "$clone_path"; then
+    if type ssh_load_key_for_url &>/dev/null; then
+        ssh_load_key_for_url "$git_url" 2>/dev/null
+    fi
+    if command git clone "$git_url" "$clone_path"; then
         _suggest_git_hooks "$clone_path"
     fi
 }
@@ -336,7 +284,6 @@ function git-setup() {
     default_branch=$(git -C "$target" ls-remote --symref origin HEAD 2>/dev/null | sed -n 's|^ref: refs/heads/\(.*\)\tHEAD$|\1|p')
     [ -z "$default_branch" ] && default_branch="main"
 
-    # Use .gitbranch if Syncthing synced it from another machine
     local active_branch="$default_branch"
     if [ -f "$target/.gitbranch" ]; then
         local synced_branch

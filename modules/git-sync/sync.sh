@@ -43,7 +43,7 @@ _git_sync_catchup() {
 
     ahead=$(git rev-list --count "origin/$branch"..HEAD 2>/dev/null) || return 0
     if [ "$ahead" -gt 0 ]; then
-        echo "[ssh-host-manager] diverged from origin/$branch (+$ahead local, +$behind remote) — resolve manually" >&2
+        _git_tty "[git-sync] diverged from origin/$branch (+$ahead local, +$behind remote) — resolve manually"
         return 0
     fi
 
@@ -65,10 +65,10 @@ _git_sync_catchup() {
     done < <(git diff --name-only HEAD.."origin/$branch" 2>/dev/null)
 
     if $all_match; then
-        echo "[ssh-host-manager] fast-forwarding $behind commit(s) to origin/$branch"
+        _git_tty "[git-sync] fast-forwarding $behind commit(s) to origin/$branch"
         git reset --hard "origin/$branch" --quiet
     else
-        echo "[ssh-host-manager] behind origin/$branch by $behind commit(s), working tree has local changes — stash or commit first" >&2
+        _git_tty "[git-sync] behind origin/$branch by $behind commit(s), working tree has local changes — stash or commit first"
     fi
 }
 
@@ -82,6 +82,7 @@ if [ -n "$ZSH_VERSION" ]; then
     add-zsh-hook chpwd _git_sync_check
     # One-shot precmd for the startup case (terminals opened inside a repo dir).
     # Using precmd rather than a direct call avoids p10k instant prompt warnings.
+    # Output via _git_tty (writes to /dev/tty directly) so p10k doesn't intercept it.
     _git_sync_startup() {
         _git_sync_check
         add-zsh-hook -d precmd _git_sync_startup
@@ -96,8 +97,6 @@ elif [ -n "$BASH_VERSION" ]; then
         fi
     }
     if [[ "$PROMPT_COMMAND" != *"_git_sync_check_dir"* ]]; then
-        # Prepend so it runs before the prompt is drawn.
-        # On first prompt _git_sync_last_dir is empty so the startup case is covered.
         PROMPT_COMMAND="_git_sync_check_dir${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
     fi
 fi

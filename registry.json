@@ -38,17 +38,15 @@
     {
       "id": "ssh-host-manager",
       "description": "Centralized SSH host and key management with dynamic clone function generation",
-      "version": "0.9.5",
+      "version": "0.10.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager.sh",
       "category": "security",
       "exports": {
         "aliases": [],
         "functions": [
-          "clone-repo",
           "get_git_ssh_key",
           "get_ssh_key_for_host",
           "git",
-          "git-setup",
           "is_key_loaded",
           "ssh",
           "ssh-host-add",
@@ -59,13 +57,11 @@
           "ssh_load_key_for_url"
         ],
         "variables": [
-          "BASHRCMODS_CODE_BASE_DIR",
           "BASHRCMODS_SSH_AUTO_ALIAS",
           "BASHRCMODS_SSH_AUTO_CLONE_DIR",
           "BASHRCMODS_SSH_CLONE_DIR_BASE",
           "SSH_CONFIG",
-          "SSH_HOST_MANAGER_DIR",
-          "_STIGNORE_LAST_CHECK"
+          "SSH_HOST_MANAGER_DIR"
         ]
       },
       "files": [
@@ -74,20 +70,12 @@
           "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager/agent.sh"
         },
         {
-          "path": "ssh-host-manager/git.sh",
-          "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager/git.sh"
-        },
-        {
           "path": "ssh-host-manager/manager.sh",
           "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager/manager.sh"
         },
         {
           "path": "ssh-host-manager/README.md",
           "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager/README.md"
-        },
-        {
-          "path": "ssh-host-manager/sync.sh",
-          "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager/sync.sh"
         }
       ]
     },
@@ -266,6 +254,25 @@
         ],
         "functions": [],
         "variables": []
+      }
+    },
+    {
+      "id": "git-sync",
+      "description": "Git working-state sync for Syncthing-based multi-machine workflows: git-setup, clone-repo, auto-catchup on cd",
+      "version": "0.1.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/git-sync.sh",
+      "category": "git",
+      "exports": {
+        "aliases": [],
+        "functions": [
+          "git-setup",
+          "clone-repo"
+        ],
+        "variables": [
+          "BASHRCMODS_CODE_BASE_DIR",
+          "BASHRCMODS_GIT_SYNC_AUTO_SETUP",
+          "BASHRCMODS_GIT_SYNC_CATCHUP"
+        ]
       }
     },
     {

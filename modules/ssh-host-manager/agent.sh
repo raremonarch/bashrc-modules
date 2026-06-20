@@ -244,6 +244,30 @@ ssh() {
     command ssh "${args[@]}"
 }
 
+# Load SSH key based on a git remote URL (used by git-setup and clone-repo in git-sync).
+ssh_load_key_for_url() {
+    local git_url="$1"
+    local ssh_host key_file
+
+    [ -z "$git_url" ] && { echo "No Git URL provided"; return 1; }
+
+    case "$git_url" in
+        git@*:*)     ssh_host=$(echo "$git_url" | sed -E 's|^git@([^:]+):.*|\1|') ;;
+        ssh://git@*) ssh_host=$(echo "$git_url" | sed -E 's|^ssh://git@([^:/]+).*|\1|') ;;
+        *)           echo "Not an SSH Git URL: $git_url"; return 1 ;;
+    esac
+
+    key_file=$(get_ssh_key_for_host "$ssh_host") || {
+        echo "Could not find SSH key for host: $ssh_host"
+        return 1
+    }
+
+    is_key_loaded "$key_file" && return 0
+
+    echo "Loading SSH key for $ssh_host: $(basename "$key_file")"
+    ssh-add "$key_file"
+}
+
 # Override git command to auto-load SSH keys for remote operations
 git() {
     case "$1" in
