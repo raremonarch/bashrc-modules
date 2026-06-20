@@ -212,6 +212,9 @@ else
         PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }_check_code_stignore"
 fi
 
+# Run once at shell startup to catch terminals opened inside ~/code
+_check_code_stignore
+
 function clone-repo () {
     if [ -z "$1" ] || [ -z "$2" ]; then
         echo "Usage: clone-repo <owner> <repo-name>"
