@@ -47,11 +47,28 @@ _git_sync_catchup() {
         return 0
     fi
 
-    if git diff --quiet "origin/$branch" 2>/dev/null; then
+    # git diff --quiet misses untracked files that exist in origin (new files added by
+    # a remote commit show as "absent" from git's perspective even if Syncthing already
+    # put them on disk). Instead, hash each changed file directly and compare with origin.
+    local all_match=true file origin_hash wt_hash
+    while IFS= read -r file; do
+        [ -z "$file" ] && continue
+        origin_hash=$(git ls-tree "origin/$branch" -- "$file" 2>/dev/null | awk '{print $3}')
+        [ -z "$origin_hash" ] && continue  # deleted in origin — skip
+        if [ ! -f "$file" ]; then
+            all_match=false; break
+        fi
+        wt_hash=$(git hash-object -- "$file" 2>/dev/null)
+        if [ "$wt_hash" != "$origin_hash" ]; then
+            all_match=false; break
+        fi
+    done < <(git diff --name-only HEAD.."origin/$branch" 2>/dev/null)
+
+    if $all_match; then
         echo "[ssh-host-manager] fast-forwarding $behind commit(s) to origin/$branch"
         git reset --hard "origin/$branch" --quiet
     else
-        echo "[ssh-host-manager] behind origin/$branch by $behind commit(s), working tree differs — run 'git pull'" >&2
+        echo "[ssh-host-manager] behind origin/$branch by $behind commit(s), working tree has local changes — stash or commit first" >&2
     fi
 }
 
