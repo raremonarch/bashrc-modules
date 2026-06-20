@@ -146,6 +146,37 @@ _suggest_git_hooks() {
     fi
 }
 
+# Install post-commit (auto-push) and post-checkout (branch tracking) hooks.
+# Skips each if a hook already exists to avoid overwriting project-specific hooks.
+_install_sync_hooks() {
+    local repo="$1"
+    local hooks_dir="$repo/.git/hooks"
+
+    if [ ! -f "$hooks_dir/post-commit" ]; then
+        cat > "$hooks_dir/post-commit" << 'HOOK'
+#!/bin/sh
+git push origin HEAD 2>/dev/null || true
+HOOK
+        chmod +x "$hooks_dir/post-commit"
+        echo "  Installed post-commit hook (auto-push)"
+    else
+        echo "  Skipped post-commit hook (already exists — add auto-push manually)"
+    fi
+
+    if [ ! -f "$hooks_dir/post-checkout" ]; then
+        cat > "$hooks_dir/post-checkout" << 'HOOK'
+#!/bin/sh
+if [ "$3" = "1" ]; then
+    git symbolic-ref --short HEAD > .gitbranch 2>/dev/null || true
+fi
+HOOK
+        chmod +x "$hooks_dir/post-checkout"
+        echo "  Installed post-checkout hook (branch tracking)"
+    else
+        echo "  Skipped post-checkout hook (already exists)"
+    fi
+}
+
 function clone-repo () {
     if [ -z "$1" ] || [ -z "$2" ]; then
         echo "Usage: clone-repo <owner> <repo-name>"
@@ -258,11 +289,25 @@ function git-setup() {
 
     default_branch=$(git -C "$target" ls-remote --symref origin HEAD 2>/dev/null | sed -n 's|^ref: refs/heads/\(.*\)\tHEAD$|\1|p')
     [ -z "$default_branch" ] && default_branch="main"
-    echo "  Branch: $default_branch"
 
-    git -C "$target" symbolic-ref HEAD "refs/heads/$default_branch"
-    git -C "$target" update-ref "refs/heads/$default_branch" "refs/remotes/origin/$default_branch"
-    git -C "$target" branch --set-upstream-to="origin/$default_branch" "$default_branch"
+    # Use .gitbranch if Syncthing synced it from another machine
+    local active_branch="$default_branch"
+    if [ -f "$target/.gitbranch" ]; then
+        local synced_branch
+        synced_branch=$(tr -d '[:space:]' < "$target/.gitbranch")
+        if [ -n "$synced_branch" ] && git -C "$target" ls-remote --heads origin "$synced_branch" | grep -q .; then
+            active_branch="$synced_branch"
+            echo "  Branch: $active_branch (from .gitbranch)"
+        else
+            echo "  Branch: $default_branch (ignoring .gitbranch: '$synced_branch' not found on origin)"
+        fi
+    else
+        echo "  Branch: $default_branch"
+    fi
+
+    git -C "$target" symbolic-ref HEAD "refs/heads/$active_branch"
+    git -C "$target" update-ref "refs/heads/$active_branch" "refs/remotes/origin/$active_branch"
+    git -C "$target" branch --set-upstream-to="origin/$active_branch" "$active_branch"
     git -C "$target" reset
     local stashed=false
     if ! git -C "$target" diff --ignore-cr-at-eol --quiet; then
@@ -273,6 +318,10 @@ function git-setup() {
     if $stashed; then
         git -C "$target" stash pop
     fi
+
+    _install_sync_hooks "$target"
+    _ensure_gitignored "$target" ".gitbranch"
+    echo "$active_branch" > "$target/.gitbranch"
 
     if type _suggest_git_hooks &>/dev/null; then
         _suggest_git_hooks "$target"
