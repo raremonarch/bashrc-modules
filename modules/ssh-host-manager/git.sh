@@ -177,6 +177,41 @@ HOOK
     fi
 }
 
+# Warn at most once per day if Syncthing is not ignoring .git dirs in the code dir.
+# Stored as YYYY-MM-DD so the check re-runs naturally at midnight.
+_STIGNORE_LAST_CHECK=""
+
+_check_code_stignore() {
+    local code_dir="${BASHRCMODS_CODE_BASE_DIR:-$HOME/code}"
+    case "$PWD" in
+        "$code_dir"|"$code_dir"/*) ;;
+        *) return 0 ;;
+    esac
+
+    local today
+    today=$(date +%Y-%m-%d)
+    [ "$_STIGNORE_LAST_CHECK" = "$today" ] && return 0
+    _STIGNORE_LAST_CHECK="$today"
+
+    local stignore="$code_dir/.stignore"
+    if [ ! -f "$stignore" ]; then
+        echo "[ssh-host-manager] warning: no .stignore in $code_dir — Syncthing may be syncing .git directories" >&2
+        return
+    fi
+    # Accept: .git  .git/  **/.git  **/.git/
+    if ! grep -qE '^(\*\*/)?\.git/?$' "$stignore"; then
+        echo "[ssh-host-manager] warning: $stignore does not exclude .git directories" >&2
+    fi
+}
+
+if [ -n "$ZSH_VERSION" ]; then
+    autoload -Uz add-zsh-hook 2>/dev/null
+    add-zsh-hook chpwd _check_code_stignore
+else
+    [[ "$PROMPT_COMMAND" != *"_check_code_stignore"* ]] &&
+        PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }_check_code_stignore"
+fi
+
 function clone-repo () {
     if [ -z "$1" ] || [ -z "$2" ]; then
         echo "Usage: clone-repo <owner> <repo-name>"

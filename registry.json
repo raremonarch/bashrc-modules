@@ -38,7 +38,7 @@
     {
       "id": "ssh-host-manager",
       "description": "Centralized SSH host and key management with dynamic clone function generation",
-      "version": "0.9.1",
+      "version": "0.9.2",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/ssh-host-manager.sh",
       "category": "security",
       "exports": {
@@ -64,7 +64,8 @@
           "BASHRCMODS_SSH_AUTO_CLONE_DIR",
           "BASHRCMODS_SSH_CLONE_DIR_BASE",
           "SSH_CONFIG",
-          "SSH_HOST_MANAGER_DIR"
+          "SSH_HOST_MANAGER_DIR",
+          "_STIGNORE_LAST_CHECK"
         ]
       },
       "files": [
