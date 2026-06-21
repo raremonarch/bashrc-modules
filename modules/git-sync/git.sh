@@ -168,6 +168,17 @@ else
         PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }_check_code_stignore"
 fi
 
+# Called by POWERLEVEL9K_VCS_CONTENT_EXPANSION. Returns the formatted VCS content,
+# or nothing (hiding the segment) when the dotfiles repo root (~) is bleeding into
+# a subdirectory that isn't itself a repo.
+_git_p10k_vcs_content() {
+    [[ "$VCS_STATUS_WORKDIR" == "$HOME" && "$PWD" != "$HOME" ]] && return
+    local c="${P9K_CONTENT/⇣* :⇡/⇣⇡}"
+    c="${c// /}"
+    c="${c//:/ }"
+    printf "%s" "$c"
+}
+
 function clone-repo() {
     if [ -z "$1" ] || [ -z "$2" ]; then
         echo "Usage: clone-repo <owner> <repo-name>"
