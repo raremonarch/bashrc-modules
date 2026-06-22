@@ -283,3 +283,26 @@ git() {
             ;;
     esac
 }
+
+# Print a reminder when entering a git repo whose SSH key isn't loaded.
+_check_git_ssh_key() {
+    command git rev-parse --git-dir &>/dev/null || return 0
+    local key_file
+    key_file=$(get_git_ssh_key 2>/dev/null) || return 0
+    is_key_loaded "$key_file" && return 0
+    printf '[ssh] use ssh-init to enter your passphrase for key: %s\n' "$(basename "$key_file")" >/dev/tty 2>/dev/null ||
+    printf '[ssh] use ssh-init to enter your passphrase for key: %s\n' "$(basename "$key_file")" >&2
+}
+
+if [ -n "$ZSH_VERSION" ]; then
+    autoload -Uz add-zsh-hook 2>/dev/null
+    add-zsh-hook chpwd _check_git_ssh_key
+    _ssh_key_startup() {
+        _check_git_ssh_key
+        add-zsh-hook -d precmd _ssh_key_startup
+    }
+    add-zsh-hook precmd _ssh_key_startup
+else
+    [[ "$PROMPT_COMMAND" != *"_check_git_ssh_key"* ]] &&
+        PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }_check_git_ssh_key"
+fi
