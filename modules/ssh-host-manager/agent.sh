@@ -292,6 +292,12 @@ git() {
 # Print a reminder when entering a git repo whose SSH key isn't loaded.
 _check_git_ssh_key() {
     command git rev-parse --git-dir &>/dev/null || return 0
+    local remote_url
+    remote_url=$(command git remote get-url origin 2>/dev/null) || return 0
+    case "$remote_url" in
+        git@*:*|ssh://git@*) ;;
+        *) return 0 ;;
+    esac
     local key_file
     key_file=$(get_git_ssh_key 2>/dev/null) || return 0
     is_key_loaded "$key_file" && return 0
