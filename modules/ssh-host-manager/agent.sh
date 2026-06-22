@@ -99,6 +99,11 @@ ssh_load_git_key() {
     ssh-add "$key_file"
 }
 
+# Public alias for ssh_load_git_key — loads the SSH key for the current repo.
+ssh-init() {
+    ssh_load_git_key
+}
+
 # Function to get SSH key for a given host
 get_ssh_key_for_host() {
     local ssh_host="$1"
