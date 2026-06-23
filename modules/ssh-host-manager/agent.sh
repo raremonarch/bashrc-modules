@@ -53,7 +53,8 @@ get_git_ssh_key() {
     esac
 
     # Look up the identity file for this host in SSH config
-    identity_file=$(ssh -G "$ssh_host" 2>/dev/null | grep -E '^identityfile ' | head -1 | awk '{print $2}')
+    # Use 'command ssh' to avoid calling our wrapper function
+    identity_file=$(command ssh -G "$ssh_host" 2>/dev/null | grep -E '^identityfile ' | head -1 | awk '{print $2}')
 
     # Expand tilde to home directory
     identity_file="${identity_file/#\~/$HOME}"
