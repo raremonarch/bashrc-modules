@@ -116,7 +116,7 @@ _select_ssh_key() {
 
     # If key override is provided, use it directly
     if [ -n "$key_override" ]; then
-        key_path="${key_override/#~/$HOME}"
+        key_path="${key_override/#\~/$HOME}"
         if [ ! -f "$key_path" ] || [ ! -f "${key_path}.pub" ]; then
             echo "Error: Key file not found: $key_path"
             return 1
@@ -557,7 +557,7 @@ ssh-host-add() {
 
     # Expand tilde in paths
     if [ -n "$clone_dir" ]; then
-        clone_dir="${clone_dir/#~/$HOME}"
+        clone_dir="${clone_dir/#\~/$HOME}"
     fi
 
     # Handle key generation or selection
@@ -565,7 +565,7 @@ ssh-host-add() {
         key_path=$(_generate_ssh_key "$host_alias" "$key_type" "$user" "$hostname" "$host_type" "$port" "$org") || return 1
     else
         # Validate existing key
-        key_path="${key_path/#~/$HOME}"
+        key_path="${key_path/#\~/$HOME}"
         if [ ! -f "$key_path" ] || [ ! -f "${key_path}.pub" ]; then
             echo "Error: Key file not found: $key_path"
             return 1
@@ -618,6 +618,15 @@ Host $host_alias
 
     echo ""
     echo "✓ SSH host '$host_alias' added successfully"
+
+    # For git hosts using an existing key, show the public key here so the user
+    # can add it to their provider. (Newly generated keys are already shown during
+    # key generation, so we skip them to avoid printing twice.)
+    if [ "$host_type" = "git" ] && [ "$generate_key" = false ] && [ -f "${key_path}.pub" ]; then
+        echo ""
+        echo "Public key (add to ${hostname}):"
+        cat "${key_path}.pub"
+    fi
 
     return 0
 }
@@ -680,7 +689,7 @@ ssh-host-list() {
         if [[ "$line" =~ ^#\ Managed\ by\ ssh-host-manager ]]; then
             # Print accumulated data from previous block if any
             if [ "$in_managed_block" = true ] && [ -n "$current_host" ]; then
-                local key_expanded="${current_key/#~/$HOME}"
+                local key_expanded="${current_key/#\~/$HOME}"
                 local key_status="✓"
                 if [ ! -f "$key_expanded" ]; then
                     key_status="✗ (missing)"
@@ -739,7 +748,7 @@ ssh-host-list() {
             elif [[ -z "$line" || "$line" =~ ^Host\ .+ || "$line" =~ ^#\ Managed\ by\ .+ ]]; then
                 if [ -n "$current_host" ]; then
                     # Expand tilde for display and checking
-                    local key_expanded="${current_key/#~/$HOME}"
+                    local key_expanded="${current_key/#\~/$HOME}"
 
                     # Check if key exists
                     local key_status="✓"
@@ -779,7 +788,7 @@ ssh-host-list() {
 
     # Handle last entry if file doesn't end with blank line
     if [ "$in_managed_block" = true ] && [ -n "$current_host" ]; then
-        local key_expanded="${current_key/#~/$HOME}"
+        local key_expanded="${current_key/#\~/$HOME}"
 
         local key_status="✓"
         if [ ! -f "$key_expanded" ]; then
