@@ -298,7 +298,7 @@ _generate_ssh_key() {
         else
             echo "Public key generated for ${hostname}" >&2
             echo "" >&2
-            _bashrcmods_read_char "Copy public key to remote host? [y/N] "
+            _bashrcmods_read_char "Copy public key to remote host? [y/N] " >&2
             echo >&2
             if [[ $REPLY =~ ^[Yy]$ ]]; then
                 _copy_ssh_key "$key_path" "$user" "$hostname" "$port" >&2 || return 1
