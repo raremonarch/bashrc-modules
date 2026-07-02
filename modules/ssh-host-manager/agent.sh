@@ -303,9 +303,13 @@ ssh_load_key_for_url() {
 git() {
     case "$1" in
         push|pull|fetch)
-            # Only try to load key if we're in a git repo
             if command git rev-parse --git-dir &>/dev/null; then
-                ssh_load_git_key || true  # Continue even if key loading fails
+                if ! ssh_load_git_key; then
+                    # Key not loaded — use BatchMode so git's internal SSH call fails
+                    # cleanly instead of prompting for a passphrase on /dev/tty
+                    GIT_SSH_COMMAND="ssh -o BatchMode=yes" command git "$@"
+                    return
+                fi
             fi
             command git "$@"
             ;;
