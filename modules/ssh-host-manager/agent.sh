@@ -78,31 +78,55 @@ is_key_loaded() {
     [ -n "$key_fingerprint" ] && ssh-add -l 2>/dev/null | grep -q "$key_fingerprint"
 }
 
-# Function to ensure the right SSH key is loaded for git operations
+# Notify the user that a key isn't loaded. Distinguishes agent-not-running from key-not-loaded.
+_ssh_notify_key_missing() {
+    local key_file="$1"
+    local _agent_rc
+    ssh-add -l > /dev/null 2>&1
+    _agent_rc=$?
+    if [ $_agent_rc -eq 2 ]; then
+        printf '[ssh] agent not running — run ssh-init to start agent and load key: %s\n' "$(basename "$key_file")" >/dev/tty 2>/dev/null ||
+        printf '[ssh] agent not running — run ssh-init to start agent and load key: %s\n' "$(basename "$key_file")" >&2
+    else
+        printf '[ssh] use ssh-init to enter your passphrase for key: %s\n' "$(basename "$key_file")" >/dev/tty 2>/dev/null ||
+        printf '[ssh] use ssh-init to enter your passphrase for key: %s\n' "$(basename "$key_file")" >&2
+    fi
+}
+
+# Notify-only: never prompts for passphrase. Use ssh-init for interactive loading.
 ssh_load_git_key() {
     local key_file
 
-    # Get the SSH key needed for this git repository
-    key_file=$(get_git_ssh_key)
+    key_file=$(get_git_ssh_key) || return 1
 
-    if [ -z "$key_file" ]; then
-        echo "Could not determine SSH key for this repository"
-        return 1
+    is_key_loaded "$key_file" && return 0
+
+    _ssh_notify_key_missing "$key_file"
+    return 1
+}
+
+# Start the agent if needed, then interactively load the SSH key for the current repo.
+ssh-init() {
+    local key_file _agent_rc
+
+    ssh-add -l > /dev/null 2>&1
+    _agent_rc=$?
+    if [ $_agent_rc -eq 2 ]; then
+        eval "$(ssh-agent -s)" > /dev/null 2>&1
+        printf 'export SSH_AUTH_SOCK=%s\n' "$SSH_AUTH_SOCK" > "$HOME/.ssh/ssh-agent.env"
+        printf 'export SSH_AGENT_PID=%s\n' "$SSH_AGENT_PID" >> "$HOME/.ssh/ssh-agent.env"
+        chmod 600 "$HOME/.ssh/ssh-agent.env"
     fi
 
-    # Check if the key is already loaded
+    key_file=$(get_git_ssh_key) || { echo "Could not determine SSH key for this repository"; return 1; }
+
     if is_key_loaded "$key_file"; then
+        echo "Key already loaded: $(basename "$key_file")"
         return 0
     fi
 
-    # Load the specific key
     echo "Loading SSH key: $(basename "$key_file")"
     ssh-add "$key_file"
-}
-
-# Public alias for ssh_load_git_key — loads the SSH key for the current repo.
-ssh-init() {
-    ssh_load_git_key
 }
 
 # Function to get SSH key for a given host
@@ -238,11 +262,12 @@ ssh() {
         key_file=$(get_ssh_key_for_host "$hostname")
     fi
 
-    # Load the key if we found one and it's not already loaded
+    # Notify and bail early if the key isn't loaded — use ssh-init to load it
     if [ -n "$key_file" ] && [ -f "$key_file" ]; then
         if ! is_key_loaded "$key_file"; then
-            echo "Loading SSH key: $(basename "$key_file")"
-            ssh-add "$key_file"
+            _ssh_notify_key_missing "$key_file"
+            command ssh -o BatchMode=yes "${args[@]}"
+            return
         fi
     fi
 
