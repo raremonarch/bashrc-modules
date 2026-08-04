@@ -299,26 +299,6 @@ ssh_load_key_for_url() {
     ssh-add "$key_file"
 }
 
-# Override git command to auto-load SSH keys for remote operations
-git() {
-    case "$1" in
-        push|pull|fetch)
-            if command git rev-parse --git-dir &>/dev/null; then
-                if ! ssh_load_git_key; then
-                    # Key not loaded — use BatchMode so git's internal SSH call fails
-                    # cleanly instead of prompting for a passphrase on /dev/tty
-                    GIT_SSH_COMMAND="ssh -o BatchMode=yes" command git "$@"
-                    return
-                fi
-            fi
-            command git "$@"
-            ;;
-        *)
-            command git "$@"
-            ;;
-    esac
-}
-
 # Print a reminder when entering a git repo whose SSH key isn't loaded.
 _check_git_ssh_key() {
     command git rev-parse --git-dir &>/dev/null || return 0
