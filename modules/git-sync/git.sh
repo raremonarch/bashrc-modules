@@ -1,13 +1,5 @@
 #!/bin/bash
-# Git utilities: repo setup, cloning, hook installation, stignore check
-
-# Write to /dev/tty directly so hook-fired messages aren't captured by p10k instant prompt.
-_git_tty() { printf '%s\n' "$*" >/dev/tty 2>/dev/null || printf '%s\n' "$*" >&2; }
-
-# Strip ANSI/VT escape sequences (e.g. arrow-key codes like ^[[C) from a string.
-_strip_escapes() {
-    printf '%s' "$1" | sed $'s/\033\\[[0-9;]*[A-Za-z]//g; s/\033//g'
-}
+# Git utilities: cloning, hook detection, p10k VCS segment
 
 # Derive a git remote URL from the directory path convention ~/code/{org}/{repo}.
 # Returns git@{org}:{org}/{repo}.git if {org} is a known SSH host alias, else fails.
@@ -21,18 +13,8 @@ _derive_remote_from_path() {
     echo "git@${org}:${org}/${repo_name}.git"
 }
 
-# Ensure an entry exists in a repo's .gitignore, appending it if missing.
-_ensure_gitignored() {
-    local repo_dir="$1"
-    local entry="$2"
-    local gitignore="$repo_dir/.gitignore"
-    if ! grep -qxF "$entry" "$gitignore" 2>/dev/null; then
-        echo "$entry" >> "$gitignore"
-    fi
-}
-
 # Check a freshly cloned repo for known hook installation mechanisms and
-# echo the appropriate setup command. Checks in order of specificity.
+# offer to install them. Checks in order of specificity.
 _suggest_git_hooks() {
     local repo="$1"
     local cmd="" label=""
@@ -96,77 +78,6 @@ _suggest_git_hooks() {
         fi
     fi
 }
-
-# Install post-commit (auto-push) and post-checkout (branch tracking) hooks.
-# Skips each if a hook already exists to avoid overwriting project-specific hooks.
-_install_sync_hooks() {
-    local repo="$1"
-    local hooks_dir="$repo/.git/hooks"
-
-    if [ ! -f "$hooks_dir/post-commit" ]; then
-        cat > "$hooks_dir/post-commit" << 'HOOK'
-#!/bin/sh
-git push origin HEAD 2>/dev/null || true
-HOOK
-        chmod +x "$hooks_dir/post-commit"
-        echo "  Installed post-commit hook (auto-push)"
-    else
-        echo "  Skipped post-commit hook (already exists — add auto-push manually)"
-    fi
-
-    if [ ! -f "$hooks_dir/post-checkout" ]; then
-        cat > "$hooks_dir/post-checkout" << 'HOOK'
-#!/bin/sh
-if [ "$3" = "1" ]; then
-    git symbolic-ref --short HEAD > .gitbranch 2>/dev/null || true
-fi
-HOOK
-        chmod +x "$hooks_dir/post-checkout"
-        echo "  Installed post-checkout hook (branch tracking)"
-    else
-        echo "  Skipped post-checkout hook (already exists)"
-    fi
-}
-
-# Warn at most once per day if Syncthing is not ignoring .git dirs in the code dir.
-# Stored as YYYY-MM-DD so the check re-runs naturally at midnight.
-_STIGNORE_LAST_CHECK=""
-
-_check_code_stignore() {
-    local code_dir="${BASHRCMODS_CODE_BASE_DIR:-$HOME/code}"
-    case "$PWD" in
-        "$code_dir"|"$code_dir"/*) ;;
-        *) return 0 ;;
-    esac
-
-    local today
-    today=$(date +%Y-%m-%d)
-    [ "$_STIGNORE_LAST_CHECK" = "$today" ] && return 0
-    _STIGNORE_LAST_CHECK="$today"
-
-    local stignore="$code_dir/.stignore"
-    if [ ! -f "$stignore" ]; then
-        _git_tty "[git-sync] warning: no .stignore in $code_dir — Syncthing may be syncing .git directories"
-        return
-    fi
-    # Accept: .git  .git/  **/.git  **/.git/
-    if ! grep -qE '^(\*\*/)?\.git/?$' "$stignore"; then
-        _git_tty "[git-sync] warning: $stignore does not exclude .git directories"
-    fi
-}
-
-if [ -n "$ZSH_VERSION" ]; then
-    autoload -Uz add-zsh-hook 2>/dev/null
-    add-zsh-hook chpwd _check_code_stignore
-    _stignore_startup() {
-        _check_code_stignore
-        add-zsh-hook -d precmd _stignore_startup
-    }
-    add-zsh-hook precmd _stignore_startup
-else
-    [[ "$PROMPT_COMMAND" != *"_check_code_stignore"* ]] &&
-        PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }_check_code_stignore"
-fi
 
 # Called by POWERLEVEL9K_VCS_CONTENT_EXPANSION. Returns the formatted VCS content,
 # or nothing (hiding the segment) when the dotfiles repo root (~) is bleeding into
@@ -238,99 +149,4 @@ function clone-repo() {
     if command git clone "$git_url" "$clone_path"; then
         _suggest_git_hooks "$clone_path"
     fi
-}
-
-function git-setup() {
-    local target="${1:-.}"
-    target="${target%/}"
-
-    if [ -d "$target/.git" ]; then
-        local existing_remote existing_branch
-        existing_remote=$(git -C "$target" remote get-url origin 2>/dev/null || echo "(no remote)")
-        existing_branch=$(git -C "$target" symbolic-ref --short HEAD 2>/dev/null || echo "(detached)")
-        echo "Already a git repository — nothing to do."
-        echo "  Remote: $existing_remote"
-        echo "  Branch: $existing_branch"
-        return 0
-    fi
-
-    local remote_url default_branch
-
-    remote_url=$(_derive_remote_from_path "$target")
-    if [ -z "$remote_url" ]; then
-        echo "Could not derive remote from path — please enter details manually."
-        echo ""
-        local host_alias owner repo_name
-        printf "  Host alias (e.g. raremonarch): "
-        read -r host_alias
-        host_alias=$(_strip_escapes "$host_alias")
-        [ -z "$host_alias" ] && { echo "Error: host alias is required"; return 1; }
-        printf "  Repo owner (e.g. raremonarch): "
-        read -r owner
-        owner=$(_strip_escapes "$owner")
-        [ -z "$owner" ] && { echo "Error: repo owner is required"; return 1; }
-        local default_repo_name
-        default_repo_name=$(cd "$target" && basename "$(pwd)")
-        printf "  Repo name [%s]: " "$default_repo_name"
-        read -r repo_name
-        repo_name=$(_strip_escapes "$repo_name")
-        repo_name="${repo_name:-$default_repo_name}"
-        remote_url="git@${host_alias}:${owner}/${repo_name}.git"
-        echo ""
-    fi
-
-    local target_label
-    [ "$target" = "." ] && target_label="current directory" || target_label="'$target'"
-    echo "Setting up git repository in $target_label..."
-    echo "  Remote: $remote_url"
-
-    if type ssh_load_key_for_url &>/dev/null; then
-        ssh_load_key_for_url "$remote_url" 2>/dev/null
-    fi
-
-    git -C "$target" init || return 1
-    git -C "$target" remote add origin "$remote_url" || return 1
-    git -C "$target" fetch origin || return 1
-
-    default_branch=$(git -C "$target" ls-remote --symref origin HEAD 2>/dev/null | sed -n 's|^ref: refs/heads/\(.*\)\tHEAD$|\1|p')
-    [ -z "$default_branch" ] && default_branch="main"
-
-    local active_branch="$default_branch"
-    if [ -f "$target/.gitbranch" ]; then
-        local synced_branch
-        synced_branch=$(tr -d '[:space:]' < "$target/.gitbranch")
-        if [ -n "$synced_branch" ] && git -C "$target" ls-remote --heads origin "$synced_branch" | grep -q .; then
-            active_branch="$synced_branch"
-            echo "  Branch: $active_branch (from .gitbranch)"
-        else
-            echo "  Branch: $default_branch (ignoring .gitbranch: '$synced_branch' not found on origin)"
-        fi
-    else
-        echo "  Branch: $default_branch"
-    fi
-
-    git -C "$target" symbolic-ref HEAD "refs/heads/$active_branch"
-    git -C "$target" update-ref "refs/heads/$active_branch" "refs/remotes/origin/$active_branch"
-    git -C "$target" branch --set-upstream-to="origin/$active_branch" "$active_branch"
-    git -C "$target" reset
-    local stashed=false
-    if ! git -C "$target" diff --ignore-cr-at-eol --quiet; then
-        git -C "$target" stash push -m "git-setup: preserve local changes"
-        stashed=true
-    fi
-    git -C "$target" reset --hard
-    if $stashed; then
-        git -C "$target" stash pop
-    fi
-
-    _install_sync_hooks "$target"
-    _ensure_gitignored "$target" ".gitbranch"
-    echo "$active_branch" > "$target/.gitbranch"
-
-    if type _suggest_git_hooks &>/dev/null; then
-        _suggest_git_hooks "$target"
-    fi
-
-    echo ""
-    echo "Done. Run 'git status' to see any uncommitted changes."
 }

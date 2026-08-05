@@ -256,30 +256,23 @@
     {
       "id": "git-sync",
       "description": "Git working-state sync for Syncthing-based multi-machine workflows: git-setup, clone-repo, auto-catchup on cd",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/git-sync.sh",
       "category": "git",
       "exports": {
         "aliases": [],
         "functions": [
-          "clone-repo",
-          "git-setup"
+          "clone-repo"
         ],
         "variables": [
           "BASHRCMODS_CODE_BASE_DIR",
-          "GIT_CEILING_DIRECTORIES",
-          "_GIT_SYNC_MOD_DIR",
-          "_STIGNORE_LAST_CHECK"
+          "_GIT_SYNC_MOD_DIR"
         ]
       },
       "files": [
         {
           "path": "git-sync/git.sh",
           "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/git-sync/git.sh"
-        },
-        {
-          "path": "git-sync/sync.sh",
-          "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/git-sync/sync.sh"
         }
       ]
     },
