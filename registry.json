@@ -254,25 +254,24 @@
       }
     },
     {
-      "id": "git-sync",
-      "description": "Git working-state sync for Syncthing-based multi-machine workflows: git-setup, clone-repo, auto-catchup on cd",
-      "version": "0.3.0",
-      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/git-sync.sh",
-      "category": "git",
+      "id": "git-utils",
+      "description": "Git utilities: SSH-aware clone-repo, post-clone hook detection, p10k VCS segment",
+      "version": "0.4.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/git-utils.sh",
+      "category": "version-control",
       "exports": {
         "aliases": [],
         "functions": [
           "clone-repo"
         ],
         "variables": [
-          "BASHRCMODS_CODE_BASE_DIR",
-          "_GIT_SYNC_MOD_DIR"
+          "BASHRCMODS_CODE_BASE_DIR"
         ]
       },
       "files": [
         {
-          "path": "git-sync/git.sh",
-          "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/git-sync/git.sh"
+          "path": "git-utils/git.sh",
+          "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/git-utils/git.sh"
         }
       ]
     },
