@@ -290,6 +290,21 @@
         ],
         "variables": []
       }
+    },
+    {
+      "id": "work-tools",
+      "description": "work-browser / work-rdp functions that reach into WSL over SSH via the work-wsl alias",
+      "version": "0.1.0",
+      "url": "https://raw.githubusercontent.com/raremonarch/bashrc-modules/main/modules/work-tools.sh",
+      "category": "system",
+      "exports": {
+        "aliases": [],
+        "functions": [
+          "work-browser",
+          "work-rdp"
+        ],
+        "variables": []
+      }
     }
   ]
 }

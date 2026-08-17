@@ -50,6 +50,7 @@ bashmod
 ### System
 - **system** - General system utilities and helpers
 - **audio-switching** - Audio device switching tools
+- **work-tools** - work-browser / work-rdp functions that SSH into WSL via the work-wsl alias
 
 ## Manual Installation
 
